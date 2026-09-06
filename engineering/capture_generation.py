@@ -30,7 +30,7 @@ def main():
         'host_event_sha': os.environ.get('GITHUB_SHA'),
         'checkout_sha': checkout,
         'checkout_tree_sha': git('rev-parse', 'HEAD^{tree}'),
-        'checkout_parent_shas': git('show', '-s', '--format=%P', 'HEAD').split(),
+        'checkout_parent_shas': [line.split()[1] for line in git('cat-file', '-p', 'HEAD').splitlines() if line.startswith('parent ')],
         'pr_head_sha': head,
         'pr_base_sha': pr.get('base', {}).get('sha'),
         'pr_merge_sha_at_event': merge,
