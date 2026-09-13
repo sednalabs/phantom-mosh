@@ -39,33 +39,44 @@
 
 using namespace Network;
 
-template<class MyState, class RemoteState>
-Transport<MyState, RemoteState>::Transport( MyState& initial_state,
+template<class MyState, class RemoteState, class ConnectionType>
+Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_state,
                                             RemoteState& initial_remote,
                                             const char* desired_ip,
                                             const char* desired_port )
   : connection( desired_ip, desired_port ), sender( &connection, initial_state ),
-    received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
+    received_states( 1, TimestampedState<RemoteState>( connection.clock(), 0, initial_remote ) ),
     receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )
 {
   /* server */
 }
 
-template<class MyState, class RemoteState>
-Transport<MyState, RemoteState>::Transport( MyState& initial_state,
+template<class MyState, class RemoteState, class ConnectionType>
+Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_state,
                                             RemoteState& initial_remote,
                                             const char* key_str,
                                             const char* ip,
                                             const char* port )
   : connection( key_str, ip, port ), sender( &connection, initial_state ),
-    received_states( 1, TimestampedState<RemoteState>( timestamp(), 0, initial_remote ) ),
+    received_states( 1, TimestampedState<RemoteState>( connection.clock(), 0, initial_remote ) ),
     receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )
 {
   /* client */
 }
 
-template<class MyState, class RemoteState>
-void Transport<MyState, RemoteState>::recv( void )
+template<class MyState, class RemoteState, class ConnectionType>
+template<class... Args>
+Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_state,
+                                                          RemoteState& initial_remote,
+                                                          ConnectionInit,
+                                                          Args&&... args )
+  : connection( std::forward<Args>( args )... ), sender( &connection, initial_state ),
+    received_states( 1, TimestampedState<RemoteState>( connection.clock(), 0, initial_remote ) ),
+    receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )
+{}
+
+template<class MyState, class RemoteState, class ConnectionType>
+void Transport<MyState, RemoteState, ConnectionType>::recv( void )
 {
   std::string s( connection.recv() );
   Fragment frag( s );
@@ -116,13 +127,13 @@ void Transport<MyState, RemoteState>::recv( void )
     process_throwaway_until( inst.throwaway_num() );
 
     if ( received_states.size() > 1024 ) { /* limit on state queue */
-      uint64_t now = timestamp();
+      uint64_t now = connection.clock();
       if ( now < receiver_quench_timer ) { /* deny letting state grow further */
         if ( verbose ) {
           fprintf(
             stderr,
             "[%u] Receiver queue full, discarding %d (malicious sender or long-unidirectional connectivity?)\n",
-            (unsigned int)( timestamp() % 100000 ),
+            (unsigned int)( connection.clock() % 100000 ),
             (int)inst.new_num() );
         }
         return;
@@ -133,7 +144,7 @@ void Transport<MyState, RemoteState>::recv( void )
 
     /* apply diff to reference state */
     TimestampedState<RemoteState> new_state = *reference_state;
-    new_state.timestamp = timestamp();
+    new_state.timestamp = connection.clock();
     new_state.num = inst.new_num();
 
     if ( !inst.diff().empty() ) {
@@ -149,7 +160,7 @@ void Transport<MyState, RemoteState>::recv( void )
         if ( verbose ) {
           fprintf( stderr,
                    "[%u] Received OUT-OF-ORDER state %d [ack %d]\n",
-                   (unsigned int)( timestamp() % 100000 ),
+                   (unsigned int)( connection.clock() % 100000 ),
                    (int)new_state.num,
                    (int)inst.ack_num() );
         }
@@ -159,7 +170,7 @@ void Transport<MyState, RemoteState>::recv( void )
     if ( verbose ) {
       fprintf( stderr,
                "[%u] Received state %d [coming from %d, ack %d]\n",
-               (unsigned int)( timestamp() % 100000 ),
+               (unsigned int)( connection.clock() % 100000 ),
                (int)new_state.num,
                (int)inst.old_num(),
                (int)inst.ack_num() );
@@ -175,8 +186,8 @@ void Transport<MyState, RemoteState>::recv( void )
 }
 
 /* The sender uses throwaway_num to tell us the earliest received state that we need to keep around */
-template<class MyState, class RemoteState>
-void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwaway_num )
+template<class MyState, class RemoteState, class ConnectionType>
+void Transport<MyState, RemoteState, ConnectionType>::process_throwaway_until( uint64_t throwaway_num )
 {
   typename std::list<TimestampedState<RemoteState>>::iterator i = received_states.begin();
   while ( i != received_states.end() ) {
@@ -191,8 +202,8 @@ void Transport<MyState, RemoteState>::process_throwaway_until( uint64_t throwawa
   fatal_assert( received_states.size() > 0 );
 }
 
-template<class MyState, class RemoteState>
-std::string Transport<MyState, RemoteState>::get_remote_diff( void )
+template<class MyState, class RemoteState, class ConnectionType>
+std::string Transport<MyState, RemoteState, ConnectionType>::get_remote_diff( void )
 {
   /* find diff between last receiver state and current remote state, then rationalize states */
 

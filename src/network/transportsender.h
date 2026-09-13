@@ -53,7 +53,7 @@ const int ACK_DELAY = 100;              /* ms before delayed ack */
 const int SHUTDOWN_RETRIES = 16;        /* number of shutdown packets to send before giving up */
 const int ACTIVE_RETRY_TIMEOUT = 10000; /* attempt to resend at frame rate */
 
-template<class MyState>
+template<class MyState, class ConnectionType = Connection>
 class TransportSender
 {
 private:
@@ -67,7 +67,7 @@ private:
   void add_sent_state( uint64_t the_timestamp, uint64_t num, MyState& state );
 
   /* state of sender */
-  Connection* connection;
+  ConnectionType* connection;
 
   MyState current_state;
 
@@ -109,7 +109,7 @@ private:
 
 public:
   /* constructor */
-  TransportSender( Connection* s_connection, MyState& initial_state );
+  TransportSender( ConnectionType* s_connection, MyState& initial_state );
 
   /* Send data or an ack if necessary */
   void tick( void );
@@ -133,7 +133,7 @@ public:
   void start_shutdown( void )
   {
     if ( !shutdown_in_progress ) {
-      shutdown_start = timestamp();
+      shutdown_start = connection->clock();
       shutdown_in_progress = true;
     }
   }
