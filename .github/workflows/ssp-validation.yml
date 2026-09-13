@@ -1,0 +1,25 @@
+name: SSP integration validation
+on:
+  push:
+    branches: ['feat/phantom-ssp-integration']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Capture exact integration source
+        run: |
+          mkdir snapshot
+          git archive --format=tar HEAD > snapshot/source.tar
+          git cat-file commit HEAD > snapshot/commit.txt
+          git rev-parse 'HEAD^{tree}' > snapshot/tree.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: integration-source
+          path: snapshot/
+          retention-days: 1
