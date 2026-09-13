@@ -4,9 +4,17 @@
 #define PHANTOM_MOSH_SESSION_UDP_H
 #include "remote_session.h"
 namespace phantom {
-struct InboundDatagram { UdpEndpoint peer; Bytes bytes; };
+struct InboundDatagram
+{
+  UdpEndpoint peer;
+  Bytes bytes;
+};
 // Distinguish a discarded datagram from an empty socket for receive-work budgets.
-struct SocketRead { bool consumed; std::optional<InboundDatagram> datagram; };
+struct SocketRead
+{
+  bool consumed;
+  std::optional<InboundDatagram> datagram;
+};
 // Linux socket owner. Port zero requests a fresh ephemeral port; host remains
 // an explicit numeric unicast address. No shared socket or descriptor cloning.
 class SessionSocket
@@ -27,6 +35,7 @@ public:
   std::optional<InboundDatagram> receive();
   int fd() const noexcept { return fd_; }
   void wait( int timeout_ms );
+
 private:
   SessionSocket( int fd, UdpEndpoint local ) : fd_( fd ), local_( local ) {}
   int fd_;

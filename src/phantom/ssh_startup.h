@@ -3,8 +3,8 @@
 #ifndef PHANTOM_MOSH_SSH_STARTUP_H
 #define PHANTOM_MOSH_SSH_STARTUP_H
 
-#include "startup.h"
 #include "session_offer.h"
+#include "startup.h"
 #include <chrono>
 #include <string>
 

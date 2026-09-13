@@ -11,8 +11,8 @@
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <vector>
 #include <utility>
+#include <vector>
 
 extern char** environ;
 namespace phantom {

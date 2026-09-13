@@ -22,6 +22,7 @@ public:
   SessionFrame& operator=( const SessionFrame& ) = delete;
   std::string_view view() const noexcept { return { bytes_.data(), size_ }; }
   void clear() noexcept;
+
 private:
   std::array<char, SESSION_OFFER_MAX> bytes_ {};
   std::size_t size_ = 0;
@@ -39,6 +40,7 @@ public:
   SessionOfferDecoder& operator=( const SessionOfferDecoder& ) = delete;
   void feed( std::string_view chunk );
   SessionOffer finish();
+
 private:
   std::array<char, SESSION_OFFER_MAX> bytes_ {};
   std::size_t size_ = 0;

@@ -19,8 +19,24 @@ struct ChannelPolicy
   std::uint64_t revalidate_ms = 0;
   std::size_t receive_budget = 32;
 };
-enum class ChannelState { connecting, active, closing, closed };
-enum class ChannelEnd { none, stopped, peer_closed, connect_timeout, path_timeout, close_timeout, server_expired, failed };
+enum class ChannelState
+{
+  connecting,
+  active,
+  closing,
+  closed
+};
+enum class ChannelEnd
+{
+  none,
+  stopped,
+  peer_closed,
+  connect_timeout,
+  path_timeout,
+  close_timeout,
+  server_expired,
+  failed
+};
 
 // Owns received plaintext until moved out by the application. No receive queue
 // survives a service call. A batch contains at most receive_budget datagrams.
@@ -44,10 +60,18 @@ struct ChannelBatch
 class SessionChannel
 {
 public:
-  static std::unique_ptr<SessionChannel> client( SessionSocket&& socket, UdpEndpoint server,
-    Bootstrap&& secret, std::uint64_t now_ms, ChannelPolicy policy = {}, Policy crypto = {} );
-  static std::unique_ptr<SessionChannel> server( SessionSocket&& socket, Bootstrap&& secret,
-    std::uint64_t now_ms, RemotePolicy lifetime = {}, ChannelPolicy policy = {}, Policy crypto = {} );
+  static std::unique_ptr<SessionChannel> client( SessionSocket&& socket,
+                                                 UdpEndpoint server,
+                                                 Bootstrap&& secret,
+                                                 std::uint64_t now_ms,
+                                                 ChannelPolicy policy = {},
+                                                 Policy crypto = {} );
+  static std::unique_ptr<SessionChannel> server( SessionSocket&& socket,
+                                                 Bootstrap&& secret,
+                                                 std::uint64_t now_ms,
+                                                 RemotePolicy lifetime = {},
+                                                 ChannelPolicy policy = {},
+                                                 Policy crypto = {} );
   ~SessionChannel();
   SessionChannel( const SessionChannel& ) = delete;
   SessionChannel& operator=( const SessionChannel& ) = delete;

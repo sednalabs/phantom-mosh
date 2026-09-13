@@ -44,7 +44,13 @@ struct RemotePolicy
   // future terminal owner is responsible for ending a confirmed live session.
   std::uint64_t idle_ms = 0;
 };
-enum class RemoteState { pending, active, draining, closed };
+enum class RemoteState
+{
+  pending,
+  active,
+  draining,
+  closed
+};
 struct Outbound
 {
   UdpEndpoint peer;
@@ -80,7 +86,13 @@ private:
   std::unique_ptr<Impl> impl_;
 };
 
-enum class ClientState { connecting, active, closing, closed };
+enum class ClientState
+{
+  connecting,
+  active,
+  closing,
+  closed
+};
 struct ClientEvent
 {
   std::optional<Bytes> reply;
