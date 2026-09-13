@@ -1,0 +1,31 @@
+name: Format session branch
+
+on:
+  push:
+    branches: [feat/phantom-session-channel]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.repository == 'sednalabs/phantom-mosh'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: feat/phantom-session-channel
+      - run: sudo apt-get update && sudo apt-get install -y clang-format-14
+      - name: Apply repository formatting
+        run: |
+          find src/phantom tests/phantom -type f \( -name '*.cc' -o -name '*.h' \) -exec clang-format-14 -i {} +
+          if git diff --quiet; then
+            echo 'No formatting changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/phantom tests/phantom
+          git commit -m 'style: apply clang-format 14 to session integration'
+          git push origin HEAD:feat/phantom-session-channel
