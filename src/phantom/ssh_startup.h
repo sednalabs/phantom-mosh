@@ -12,7 +12,7 @@ namespace phantom {
 // SSH options are exposed: authentication/lifecycle safeguards cannot be undone.
 struct SshStartupOptions
 {
-  std::string destination; // [user@]host or a trusted SSH configuration alias
+  std::string destination;               // [user@]host or a trusted SSH configuration alias
   std::string ssh_path = "/usr/bin/ssh"; // absolute executable; never searched in PATH
   std::string server_path = "phantom-mosh-server";
   std::string config_path; // optional trusted -F file; empty uses normal SSH config
