@@ -85,3 +85,5 @@ if(PHANTOM_BUILD_SSH_STARTUP)
       $<TARGET_FILE:phantom_ssh_driver> ${PHANTOM_SSH_TEST_ARGUMENTS})
   set_tests_properties(phantom-ssh-integration PROPERTIES TIMEOUT 60 SKIP_RETURN_CODE 77)
 endif()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/session.cmake)

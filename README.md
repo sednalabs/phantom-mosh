@@ -16,8 +16,12 @@ reader and a Linux OpenSSH supervisor. The supervisor verifies SSH completion,
 requires existing host trust and handles deadlines, cancellation and child cleanup.
 
 **The existing `mosh`, `mosh-client` and `mosh-server` executables still use
-upstream Mosh v2.** The startup components are not yet connected to a production
-server, terminal handling or Mosh's State Synchronization Protocol (SSP). There is no
+upstream Mosh v2.** An experimental Linux `phantom-mosh-server` now owns a
+bounded remote-session lifecycle, and `phantom-mosh-probe` performs authenticated
+startup, UDP return-path confirmation and close. Neither starts a terminal.
+Both executables use a shared, bounded UDP channel with application-datagram
+delivery, control retries and established-session path recovery. Mosh's State
+Synchronization Protocol (SSP) is not yet integrated. There is no
 `--protocol=v3` option or native Windows client yet.
 
 The protocol is experimental and needs independent security review before
@@ -44,6 +48,9 @@ Linux/glibc 2.34+; disable it with `PHANTOM_BUILD_SSH_STARTUP=OFF` elsewhere.
 Real SSH tests create an isolated loopback server with disposable keys. Install
 OpenSSH client/server tools and set `PHANTOM_REQUIRE_SSH_TESTS=ON` to require
 these tests; without the tools, developer builds report an explicit skip.
+The remote-session executable additionally requires Linux `close_range` support.
+Its process tests use real local UDP, including IPv6, and a synthetic SSH context;
+that context alone does not authenticate a connection.
 
 For sanitizer builds and formatting, see [CONTRIBUTING.md](CONTRIBUTING.md).
 The inherited Autotools build is unchanged; its instructions are in the
@@ -54,6 +61,9 @@ The inherited Autotools build is unchanged; its instructions are in the
 - [Protocol specification](docs/phantom/protocol-draft-01.md): wire format, key schedule and state machine.
 - [Startup and secret handoff](docs/phantom/startup.md): message format and launcher responsibilities.
 - [SSH startup supervisor](docs/phantom/ssh-startup.md): authentication, process ownership and integration tests.
+- [Remote-session control](docs/phantom/remote-session.md): lifetime, address binding and the diagnostic probe.
+- [Application datagram channel](docs/phantom/session-channel.md): event-loop integration, budgets and recovery.
+- [CI runner policy](docs/phantom/ci-runners.md): standard free public-repository runners.
 - [Security notes](docs/phantom/security.md): assumptions, limitations and review targets.
 - [Integration roadmap](docs/phantom/integration.md): bootstrap, SSP and platform work.
 - [Traffic-analysis evaluation](docs/phantom/evaluation.md): observer inputs and experiment design.

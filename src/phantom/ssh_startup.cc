@@ -11,6 +11,7 @@
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 extern char** environ;
@@ -97,7 +98,7 @@ struct Child
 };
 struct Buffer
 {
-  std::array<char, STARTUP_MAX_BYTES + 1> data {};
+  std::array<char, std::max( STARTUP_MAX_BYTES, SESSION_OFFER_MAX ) + 1> data {};
   ~Buffer() { clear(); }
   void clear() { OPENSSL_cleanse( data.data(), data.size() ); }
 };
@@ -145,8 +146,9 @@ void cancelled( int fd )
   if ( event.revents )
     throw Error( "SSH startup cancelled" );
 }
-} // namespace
-StartupOffer start_over_ssh( const SshStartupOptions& options )
+template<class Decoder>
+auto start_selected( const SshStartupOptions& options, std::string_view flag, std::string_view profile )
+  -> decltype( std::declval<Decoder&>().finish() )
 {
   validate( options );
   const auto deadline = std::chrono::steady_clock::now() + options.timeout;
@@ -176,8 +178,8 @@ StartupOffer start_over_ssh( const SshStartupOptions& options )
   }
   args.emplace_back( "--" );
   args.push_back( options.destination );
-  args.push_back( "exec " + quote( options.server_path ) + " '--startup-profile' "
-                  + quote( std::string( PROFILE_ID ) ) );
+  args.push_back( "exec " + quote( options.server_path ) + " " + quote( std::string( flag ) ) + " "
+                  + quote( std::string( profile ) ) );
   std::vector<char*> argv;
   for ( auto& arg : args )
     argv.push_back( arg.data() );
@@ -215,7 +217,7 @@ StartupOffer start_over_ssh( const SshStartupOptions& options )
            == 0 );
   child.pid = spawned;
   output.close();
-  StartupDecoder decoder;
+  Decoder decoder;
   Buffer buffer;
   bool eof = false;
   for ( ;; ) {
@@ -255,5 +257,14 @@ StartupOffer start_over_ssh( const SshStartupOptions& options )
     decoder.feed( { buffer.data.data(), static_cast<std::size_t>( count ) } );
     buffer.clear();
   }
+}
+} // namespace
+StartupOffer start_over_ssh( const SshStartupOptions& options )
+{
+  return start_selected<StartupDecoder>( options, "--startup-profile", PROFILE_ID );
+}
+SessionOffer start_session_over_ssh( const SshStartupOptions& options )
+{
+  return start_selected<SessionOfferDecoder>( options, "--session-profile", SESSION_PROFILE );
 }
 } // namespace phantom
