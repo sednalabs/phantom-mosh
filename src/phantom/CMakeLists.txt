@@ -87,3 +87,8 @@ if(PHANTOM_BUILD_SSH_STARTUP)
 endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/session.cmake)
+
+option(PHANTOM_BUILD_SSP "Build the Linux SSP connection adapter and convergence tests" OFF)
+if(PHANTOM_BUILD_SSP)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/ssp.cmake)
+endif()

@@ -223,6 +223,8 @@ public:
   std::string recv( void );
   const std::vector<int> fds( void ) const;
   int get_MTU( void ) const { return MTU; }
+  size_t max_payload_size( void ) const { return MTU - ADDED_BYTES - Crypto::Session::ADDED_BYTES; }
+  uint64_t clock( void ) const { return timestamp(); }
 
   std::string port( void ) const;
   std::string get_key( void ) const { return key.printable_key(); }

@@ -46,19 +46,19 @@
 
 using namespace Network;
 
-template<class MyState>
-TransportSender<MyState>::TransportSender( Connection* s_connection, MyState& initial_state )
+template<class MyState, class ConnectionType>
+TransportSender<MyState, ConnectionType>::TransportSender( ConnectionType* s_connection, MyState& initial_state )
   : connection( s_connection ), current_state( initial_state ),
-    sent_states( 1, TimestampedState<MyState>( timestamp(), 0, initial_state ) ),
-    assumed_receiver_state( sent_states.begin() ), fragmenter(), next_ack_time( timestamp() ),
-    next_send_time( timestamp() ), verbose( 0 ), shutdown_in_progress( false ), shutdown_tries( 0 ),
+    sent_states( 1, TimestampedState<MyState>( connection->clock(), 0, initial_state ) ),
+    assumed_receiver_state( sent_states.begin() ), fragmenter(), next_ack_time( connection->clock() ),
+    next_send_time( connection->clock() ), verbose( 0 ), shutdown_in_progress( false ), shutdown_tries( 0 ),
     shutdown_start( -1 ), ack_num( 0 ), pending_data_ack( false ), SEND_MINDELAY( 8 ), last_heard( 0 ), prng(),
     mindelay_clock( -1 )
 {}
 
 /* Try to send roughly two frames per RTT, bounded by limits on frame rate */
-template<class MyState>
-unsigned int TransportSender<MyState>::send_interval( void ) const
+template<class MyState, class ConnectionType>
+unsigned int TransportSender<MyState, ConnectionType>::send_interval( void ) const
 {
   int SEND_INTERVAL = lrint( ceil( connection->get_SRTT() / 2.0 ) );
   if ( SEND_INTERVAL < SEND_INTERVAL_MIN ) {
@@ -71,10 +71,10 @@ unsigned int TransportSender<MyState>::send_interval( void ) const
 }
 
 /* Housekeeping routine to calculate next send and ack times */
-template<class MyState>
-void TransportSender<MyState>::calculate_timers( void )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::calculate_timers( void )
 {
-  uint64_t now = timestamp();
+  uint64_t now = connection->clock();
 
   /* Update assumed receiver state */
   update_assumed_receiver_state();
@@ -110,8 +110,8 @@ void TransportSender<MyState>::calculate_timers( void )
 }
 
 /* How many ms to wait until next event */
-template<class MyState>
-int TransportSender<MyState>::wait_time( void )
+template<class MyState, class ConnectionType>
+int TransportSender<MyState, ConnectionType>::wait_time( void )
 {
   calculate_timers();
 
@@ -120,7 +120,7 @@ int TransportSender<MyState>::wait_time( void )
     next_wakeup = next_send_time;
   }
 
-  uint64_t now = timestamp();
+  uint64_t now = connection->clock();
 
   if ( !connection->get_has_remote_addr() ) {
     return INT_MAX;
@@ -134,8 +134,8 @@ int TransportSender<MyState>::wait_time( void )
 }
 
 /* Send data or an empty ack if necessary */
-template<class MyState>
-void TransportSender<MyState>::tick( void )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::tick( void )
 {
   calculate_timers(); /* updates assumed receiver state and rationalizes */
 
@@ -143,7 +143,7 @@ void TransportSender<MyState>::tick( void )
     return;
   }
 
-  uint64_t now = timestamp();
+  uint64_t now = connection->clock();
 
   if ( ( now < next_ack_time ) && ( now < next_send_time ) ) {
     return;
@@ -186,10 +186,10 @@ void TransportSender<MyState>::tick( void )
   }
 }
 
-template<class MyState>
-void TransportSender<MyState>::send_empty_ack( void )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::send_empty_ack( void )
 {
-  uint64_t now = timestamp();
+  uint64_t now = connection->clock();
 
   assert( now >= next_ack_time );
 
@@ -208,8 +208,8 @@ void TransportSender<MyState>::send_empty_ack( void )
   next_send_time = uint64_t( -1 );
 }
 
-template<class MyState>
-void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t num, MyState& state )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::add_sent_state( uint64_t the_timestamp, uint64_t num, MyState& state )
 {
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
@@ -221,8 +221,8 @@ void TransportSender<MyState>::add_sent_state( uint64_t the_timestamp, uint64_t 
   }
 }
 
-template<class MyState>
-void TransportSender<MyState>::send_to_receiver( const std::string& diff )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::send_to_receiver( const std::string& diff )
 {
   uint64_t new_num;
   if ( current_state == sent_states.back().state ) { /* previously sent */
@@ -237,9 +237,9 @@ void TransportSender<MyState>::send_to_receiver( const std::string& diff )
   }
 
   if ( new_num == sent_states.back().num ) {
-    sent_states.back().timestamp = timestamp();
+    sent_states.back().timestamp = connection->clock();
   } else {
-    add_sent_state( timestamp(), new_num, current_state );
+    add_sent_state( connection->clock(), new_num, current_state );
   }
 
   send_in_fragments( diff, new_num ); // Can throw NetworkException
@@ -248,14 +248,14 @@ void TransportSender<MyState>::send_to_receiver( const std::string& diff )
   /* ("probably" because the FIRST size-exceeded datagram doesn't get an error) */
   assumed_receiver_state = sent_states.end();
   assumed_receiver_state--;
-  next_ack_time = timestamp() + ACK_INTERVAL;
+  next_ack_time = connection->clock() + ACK_INTERVAL;
   next_send_time = uint64_t( -1 );
 }
 
-template<class MyState>
-void TransportSender<MyState>::update_assumed_receiver_state( void )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::update_assumed_receiver_state( void )
 {
-  uint64_t now = timestamp();
+  uint64_t now = connection->clock();
 
   /* start from what is known and give benefit of the doubt to unacknowledged states
      transmitted recently enough ago */
@@ -277,8 +277,8 @@ void TransportSender<MyState>::update_assumed_receiver_state( void )
   }
 }
 
-template<class MyState>
-void TransportSender<MyState>::rationalize_states( void )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::rationalize_states( void )
 {
   const MyState* known_receiver_state = &sent_states.front().state;
 
@@ -291,8 +291,8 @@ void TransportSender<MyState>::rationalize_states( void )
   }
 }
 
-template<class MyState>
-const std::string TransportSender<MyState>::make_chaff( void )
+template<class MyState, class ConnectionType>
+const std::string TransportSender<MyState, ConnectionType>::make_chaff( void )
 {
   const size_t CHAFF_MAX = 16;
   const size_t chaff_len = prng.uint8() % ( CHAFF_MAX + 1 );
@@ -302,8 +302,8 @@ const std::string TransportSender<MyState>::make_chaff( void )
   return std::string( chaff, chaff_len );
 }
 
-template<class MyState>
-void TransportSender<MyState>::send_in_fragments( const std::string& diff, uint64_t new_num )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::send_in_fragments( const std::string& diff, uint64_t new_num )
 {
   Instruction inst;
 
@@ -320,7 +320,7 @@ void TransportSender<MyState>::send_in_fragments( const std::string& diff, uint6
   }
 
   std::vector<Fragment> fragments = fragmenter.make_fragments(
-    inst, connection->get_MTU() - Network::Connection::ADDED_BYTES - Crypto::Session::ADDED_BYTES );
+    inst, connection->max_payload_size() );
   for ( std::vector<Fragment>::iterator i = fragments.begin(); i != fragments.end(); i++ ) {
     connection->send( i->tostring() );
 
@@ -328,7 +328,7 @@ void TransportSender<MyState>::send_in_fragments( const std::string& diff, uint6
       fprintf(
         stderr,
         "[%u] Sent [%d=>%d] id %d, frag %d ack=%d, throwaway=%d, len=%d, frame rate=%.2f, timeout=%d, srtt=%.1f\n",
-        (unsigned int)( timestamp() % 100000 ),
+        (unsigned int)( connection->clock() % 100000 ),
         (int)inst.old_num(),
         (int)inst.new_num(),
         (int)i->id,
@@ -345,8 +345,8 @@ void TransportSender<MyState>::send_in_fragments( const std::string& diff, uint6
   pending_data_ack = false;
 }
 
-template<class MyState>
-void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::process_acknowledgment_through( uint64_t ack_num )
 {
   /* Ignore ack if we have culled the state it's acknowledging */
 
@@ -371,13 +371,13 @@ void TransportSender<MyState>::process_acknowledgment_through( uint64_t ack_num 
 }
 
 /* give up on getting acknowledgement for shutdown */
-template<class MyState>
-bool TransportSender<MyState>::shutdown_ack_timed_out( void ) const
+template<class MyState, class ConnectionType>
+bool TransportSender<MyState, ConnectionType>::shutdown_ack_timed_out( void ) const
 {
   if ( shutdown_in_progress ) {
     if ( shutdown_tries >= SHUTDOWN_RETRIES ) {
       return true;
-    } else if ( timestamp() - shutdown_start >= uint64_t( ACTIVE_RETRY_TIMEOUT ) ) {
+    } else if ( connection->clock() - shutdown_start >= uint64_t( ACTIVE_RETRY_TIMEOUT ) ) {
       return true;
     }
   }
@@ -386,16 +386,16 @@ bool TransportSender<MyState>::shutdown_ack_timed_out( void ) const
 }
 
 /* Executed upon entry to new receiver state */
-template<class MyState>
-void TransportSender<MyState>::set_ack_num( uint64_t s_ack_num )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::set_ack_num( uint64_t s_ack_num )
 {
   ack_num = s_ack_num;
 }
 
 /* Investigate diff against known receiver state instead */
 /* Mutates proposed_diff */
-template<class MyState>
-void TransportSender<MyState>::attempt_prospective_resend_optimization( std::string& proposed_diff )
+template<class MyState, class ConnectionType>
+void TransportSender<MyState, ConnectionType>::attempt_prospective_resend_optimization( std::string& proposed_diff )
 {
   if ( assumed_receiver_state == sent_states.begin() ) {
     return;
