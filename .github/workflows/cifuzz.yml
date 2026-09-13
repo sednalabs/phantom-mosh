@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Build fuzzers from this repository PR revision
         id: build
-        uses: google/oss-fuzz/infra/cifuzz/external-actions/build_fuzzers@4e65aea32254fe988ac4b84dbb088d2d08d789e7
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           dry-run: false
@@ -20,12 +20,13 @@ jobs:
           keep-unaffected-fuzz-targets: true
 
       - name: Run fuzzers
-        uses: google/oss-fuzz/infra/cifuzz/external-actions/run_fuzzers@4e65aea32254fe988ac4b84dbb088d2d08d789e7
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           fuzz-seconds: 300
           dry-run: false
           language: c++
+          mode: code-change
 
       - name: Upload crash artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
