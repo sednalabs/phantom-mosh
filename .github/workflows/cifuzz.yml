@@ -1,26 +1,35 @@
 name: CIFuzz
-on: [pull_request]
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   Fuzzing:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - name: Build Fuzzers
-      id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
-      with:
-        oss-fuzz-project-name: 'mosh'
-        dry-run: false
-        language: c++
-    - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
-      with:
-        oss-fuzz-project-name: 'mosh'
-        fuzz-seconds: 300
-        dry-run: false
-        language: c++
-    - name: Upload Crash
-      uses: actions/upload-artifact@v4
-      if: failure() && steps.build.outcome == 'success'
-      with:
-        name: artifacts
-        path: ./out/artifacts
+      - name: Build fuzzers from this repository PR revision
+        id: build
+        uses: google/oss-fuzz/infra/cifuzz/external-actions/build_fuzzers@4e65aea32254fe988ac4b84dbb088d2d08d789e7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dry-run: false
+          language: c++
+          keep-unaffected-fuzz-targets: true
+
+      - name: Run fuzzers
+        uses: google/oss-fuzz/infra/cifuzz/external-actions/run_fuzzers@4e65aea32254fe988ac4b84dbb088d2d08d789e7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 300
+          dry-run: false
+          language: c++
+
+      - name: Upload crash artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure() && steps.build.outcome == 'success'
+        with:
+          name: artifacts
+          path: ./out/artifacts
