@@ -37,20 +37,36 @@ def children():
     return result
 
 
-def finish_sessions(exclude):
+def is_server(pid, server):
+    """Identify the adopted Phantom daemon, not unrelated sshd descendants."""
+    try:
+        return Path(f'/proc/{pid}/exe').resolve() == Path(server).resolve()
+    except (FileNotFoundError, PermissionError, ProcessLookupError):
+        return False
+
+
+def finish_sessions(exclude, server):
     deadline = time.monotonic() + 5
+    server_pids = set()
+    server_seen = False
     while True:
-        for pid in children() - exclude:
+        adopted = children() - exclude
+        for pid in adopted:
+            if pid not in server_pids and is_server(pid, server):
+                server_pids.add(pid)
+                server_seen = True
+        for pid in adopted:
             try:
                 found, status = os.waitpid(pid, os.WNOHANG)
-                if found:
+                if found and pid in server_pids:
                     check(os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0,
-                          'detached session did not close cleanly')
+                          'detached Phantom session did not close cleanly')
             except ChildProcessError:
                 pass
         if not children() - exclude:
+            check(server_seen, 'detached Phantom session was not observed')
             return
-        check(time.monotonic() < deadline, 'detached session survived close drain')
+        check(time.monotonic() < deadline, 'detached session descendants survived close drain')
         time.sleep(0.01)
 
 
@@ -137,7 +153,7 @@ LogLevel ERROR
                 check(result.returncode == 0 and b'confirmed over UDP and closed' in result.stdout,
                       'real server/probe exchange failed (secret-bearing output suppressed)')
                 check(known.read_text() == pin, 'known-hosts file modified')
-                finish_sessions({daemon.pid})
+                finish_sessions({daemon.pid}, server)
                 print('PASS real SSH alias, quoted server path, authenticated numeric offer, detached C++ owner, UDP confirmation and acknowledged close')
             finally:
                 daemon.terminate()
