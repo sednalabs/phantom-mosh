@@ -5,15 +5,21 @@ The following work is needed for a usable Phantom Mosh terminal.
 
 ## Authenticated bootstrap
 
+The [startup codec and POSIX handoff reader](startup.md) now implement bounded
+framing, exact profile/role selection, secret-buffer cleanup and a total read
+deadline. Process tests hand a bootstrap through a pipe or stream socket and
+exchange encrypted UDP records with an independent test peer.
+
 Add distinctly named launcher, client and server entry points. Authenticate the
 profile identifier, endpoint roles and fresh 256-bit bootstrap secret through
-SSH, retaining its host-key authentication. Use an unambiguous startup format
-for the 43-character secret rather than the legacy 22-character key parser.
+SSH, retaining its host-key authentication. Use the startup codec on a dedicated
+control stream and check successful SSH completion before admitting the session.
 Reject profile mismatches without silent fallback; keep v2 compatibility an
 explicit choice and test it against a pinned upstream build.
 
-Bound startup input, redact malformed secret-bearing lines and erase launcher,
-environment and parser copies of the bootstrap.
+Keep the secret out of command arguments, environment variables and logs. Pass
+only the dedicated descriptor to the child, close unused pipe ends, and erase
+launcher-owned copies. The handoff reader does not replace those responsibilities.
 
 ## SSP and socket integration
 

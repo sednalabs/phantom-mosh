@@ -13,6 +13,7 @@
 #include <vector>
 namespace phantom {
 using Bytes = std::vector<unsigned char>;
+constexpr std::string_view PROFILE_ID = "phantom-mosh/v3/draft-01";
 constexpr std::size_t RECORD_OVERHEAD = 32;
 constexpr std::size_t MAX_DATAGRAM = 1200;
 constexpr std::size_t MAX_PAYLOAD = MAX_DATAGRAM - RECORD_OVERHEAD;

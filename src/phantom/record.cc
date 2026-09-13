@@ -351,10 +351,9 @@ Session::Session( Role role, Bootstrap&& bootstrap, std::uint64_t now_ms, Policy
     throw Error( "invalid or weaker-than-draft policy" );
   }
   auto state = std::make_unique<Impl>( policy, now_ms );
-  static constexpr char salt[] = "phantom-mosh/v3/draft-01";
   Secret<32> master, client, server;
   detail::extract(
-    owned.secret_.data(), 32, reinterpret_cast<const unsigned char*>( salt ), sizeof( salt ) - 1, master.data() );
+    owned.secret_.data(), 32, reinterpret_cast<const unsigned char*>( PROFILE_ID.data() ), PROFILE_ID.size(), master.data() );
   owned.clear();
   label( master.data(), "client to server", client.data(), 32 );
   label( master.data(), "server to client", server.data(), 32 );

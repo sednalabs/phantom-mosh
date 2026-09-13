@@ -78,4 +78,5 @@ jobs:
       - name: Check formatting
         run: |
           find src/phantom tests/phantom -type f \( -name '*.cc' -o -name '*.h' \) \
-            -exec clang-format-14 --dry-run --Werror {} +
+            -exec clang-format-14 -i {} +
+          git diff --exit-code
