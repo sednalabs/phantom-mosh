@@ -15,7 +15,6 @@ namespace phantom {
 // Requires EOF after exactly one message. timeout is a total 1..120000 ms budget,
 // including partial reads and interruptions. No secret enters argv/environment.
 // Authentication and SSH exit-status checks belong to the caller, not the pipe.
-StartupOffer read_startup_offer_fd( int fd,
-                                    std::chrono::milliseconds timeout = std::chrono::seconds( 10 ) );
+StartupOffer read_startup_offer_fd( int fd, std::chrono::milliseconds timeout = std::chrono::seconds( 10 ) );
 } // namespace phantom
 #endif

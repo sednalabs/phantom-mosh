@@ -55,7 +55,8 @@ int main( int argc, char** argv )
     fd = number( argv[1] );
     const auto timeout = std::chrono::milliseconds( number( argv[2] ) );
     if ( argc == 4 ) {
-      struct sigaction action {};
+      struct sigaction action
+      {};
       action.sa_handler = interrupt;
       ::sigemptyset( &action.sa_mask );
       itimerval timer {};
@@ -73,8 +74,7 @@ int main( int argc, char** argv )
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl( INADDR_LOOPBACK );
     address.sin_port = htons( offer.server_port );
-    if ( socket.fd < 0
-         || ::connect( socket.fd, reinterpret_cast<sockaddr*>( &address ), sizeof( address ) ) < 0
+    if ( socket.fd < 0 || ::connect( socket.fd, reinterpret_cast<sockaddr*>( &address ), sizeof( address ) ) < 0
          || ::send( socket.fd, record.data(), record.size(), 0 ) != static_cast<ssize_t>( record.size() ) )
       throw Error( "test UDP send failed" );
     pollfd event { socket.fd, POLLIN, 0 };

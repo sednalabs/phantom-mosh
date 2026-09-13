@@ -105,8 +105,12 @@ static void malformed_and_redacted()
     invalid( std::string_view( valid ).substr( 0, n ) );
   for ( auto port : { "0", "00", "01", "-1", "+1", "65536", "999999999999", "1.5", "", " 1", "1 " } )
     invalid( wire( port ) );
-  for ( auto key : { std::string( 22, 'A' ), std::string( 42, 'A' ), std::string( 44, 'A' ),
-                    std::string( 42, 'A' ) + "B", std::string( 43, '-' ), std::string( KEY ) + "=" } )
+  for ( auto key : { std::string( 22, 'A' ),
+                     std::string( 42, 'A' ),
+                     std::string( 44, 'A' ),
+                     std::string( 42, 'A' ) + "B",
+                     std::string( 43, '-' ),
+                     std::string( KEY ) + "=" } )
     invalid( wire( "60000", key ) );
   invalid( "MOSH CONNECT 60000 " + std::string( KEY ) + "\n" );
   invalid( "banner\n" + valid );
@@ -114,7 +118,8 @@ static void malformed_and_redacted()
   invalid( valid + "\n" );
   invalid( valid + "trailer" );
   invalid( std::string( STARTUP_MAX_BYTES + 1, 'X' ) );
-  for ( auto replacement : { "phantom-mosh/v2/draft-01", "phantom-mosh/v3/draft-02", "PHANTOM-MOSH/v3/draft-01" } ) {
+  for ( auto replacement :
+        { "phantom-mosh/v2/draft-01", "phantom-mosh/v3/draft-02", "PHANTOM-MOSH/v3/draft-01" } ) {
     auto changed = valid;
     changed.replace( changed.find( "phantom-mosh/v3/draft-01" ), PROFILE_ID.size(), replacement );
     invalid( changed );

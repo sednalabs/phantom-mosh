@@ -5,8 +5,8 @@
 #include <fcntl.h>
 #include <openssl/crypto.h>
 #include <poll.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace phantom {
@@ -41,7 +41,8 @@ StartupOffer read_startup_offer_fd( int fd, std::chrono::milliseconds timeout )
   if ( fd < 0 || timeout.count() < 1 || timeout.count() > 120000 )
     throw Error( "invalid startup channel parameters" );
   const auto deadline = std::chrono::steady_clock::now() + timeout;
-  struct stat info {};
+  struct stat info
+  {};
   if ( ::fstat( fd, &info ) < 0 )
     io_error();
   if ( !S_ISFIFO( info.st_mode ) ) {
@@ -53,8 +54,7 @@ StartupOffer read_startup_offer_fd( int fd, std::chrono::milliseconds timeout )
   }
   const int status_flags = ::fcntl( fd, F_GETFL );
   const int descriptor_flags = ::fcntl( fd, F_GETFD );
-  if ( status_flags < 0 || descriptor_flags < 0
-       || ::fcntl( fd, F_SETFL, status_flags | O_NONBLOCK ) < 0
+  if ( status_flags < 0 || descriptor_flags < 0 || ::fcntl( fd, F_SETFL, status_flags | O_NONBLOCK ) < 0
        || ::fcntl( fd, F_SETFD, descriptor_flags | FD_CLOEXEC ) < 0 )
     io_error();
   StartupDecoder decoder;
