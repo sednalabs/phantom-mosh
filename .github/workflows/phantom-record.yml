@@ -1,4 +1,4 @@
-name: Phantom record contract
+name: Phantom record tests
 
 on:
   pull_request:
@@ -37,10 +37,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake g++ clang libssl-dev python3
-      - name: Bind evidence to actual checkout
+      - name: Record tested revision and toolchain
         run: |
-          python3 engineering/capture_generation.py build-evidence/generation.json
-          { cmake --version; ${{ matrix.compiler }} --version; openssl version -a; python3 --version; } > build-evidence/toolchain.txt
+          mkdir -p test-results
+          git rev-parse HEAD > test-results/commit.txt
+          git cat-file -p HEAD | sed -n '1,/^$/p' > test-results/commit-headers.txt
+          { cmake --version; ${{ matrix.compiler }} --version; openssl version -a; python3 --version; } > test-results/toolchain.txt
       - name: Configure
         run: >-
           cmake -S src/phantom -B build/phantom
@@ -49,17 +51,17 @@ jobs:
           -DPHANTOM_SANITIZERS=${{ matrix.sanitizers }}
       - name: Build
         run: cmake --build build/phantom --parallel 2
-      - name: Test records, UDP and evaluation guards
+      - name: Test
         run: |
-          ctest --test-dir build/phantom --output-on-failure --output-junit "$PWD/build-evidence/ctest.xml"
+          ctest --test-dir build/phantom --output-on-failure --output-junit "$PWD/test-results/ctest.xml"
           git diff --exit-code HEAD
-      - name: Retain exact-generation evidence
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: phantom-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            build-evidence/
+            test-results/
             build/phantom/Testing/Temporary/LastTest.log
           if-no-files-found: error
           retention-days: 14
@@ -73,20 +75,7 @@ jobs:
         with:
           persist-credentials: false
       - run: sudo apt-get update && sudo apt-get install -y clang-format-14
-      - name: Check inherited style, including new tests
+      - name: Check formatting
         run: |
-          mkdir -p build-evidence
-          git rev-parse HEAD > build-evidence/formatter-input-sha.txt
-          git archive --format=tar HEAD > build-evidence/source.tar
-          clang-format-14 -i src/phantom/*.cc src/phantom/*.h tests/phantom/*.cc
-          git diff --binary > build-evidence/formatting.patch
-          tar -cf build-evidence/formatted.tar src/phantom tests/phantom .clang-format
-          git diff --exit-code
-      - name: Retain formatter diagnostic, not tested-source evidence
-        if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: phantom-format-${{ github.run_id }}-${{ github.run_attempt }}
-          path: build-evidence/
-          if-no-files-found: warn
-          retention-days: 14
+          find src/phantom tests/phantom -type f \( -name '*.cc' -o -name '*.h' \) \
+            -exec clang-format-14 --dry-run --Werror {} +

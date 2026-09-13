@@ -1,54 +1,54 @@
-# Integration boundary and next delivery slices
+# Integration roadmap
 
-This PR is a record-layer foundation, not a completed Mosh-v3 terminal.
-The upstream Autotools build, SSH wrapper, crypto, network and SSP paths are
-unchanged. The following are explicit unimplemented integration requirements,
-not flags or features users can already run.
+The record layer is implemented separately from the inherited Mosh runtime.
+The following work is needed for a usable Phantom Mosh terminal.
 
-## 1. Authenticated bootstrap and compatibility
+## Authenticated bootstrap
 
-Add a distinctly named Phantom launcher/client/server profile. Keep upstream v2
-compatibility explicit and test both directions against a pinned upstream build.
-Authenticate draft identity, roles and the random 256-bit bootstrap through SSH.
-Use an unambiguous new startup grammar; the old 22-character-key parser cannot
-silently accept the new 43-character secret. Reject profile mismatch without
-fallback, bound and redact malformed secret-bearing startup lines, and erase
-launcher, environment and parser copies. Do not invent a new host-key system.
+Add distinctly named launcher, client and server entry points. Authenticate the
+profile identifier, endpoint roles and fresh 256-bit bootstrap secret through
+SSH, retaining its host-key authentication. Use an unambiguous startup format
+for the 43-character secret rather than the legacy 22-character key parser.
+Reject profile mismatches without silent fallback; keep v2 compatibility an
+explicit choice and test it against a pinned upstream build.
 
-## 2. SSP adapter and socket lifecycle
+Bound startup input, redact malformed secret-bearing lines and erase launcher,
+environment and parser copies of the bootstrap.
 
-Use one Session per direction pair, retain Mosh state synchronization/prediction
-and preserve single ownership. Convert timestamps/payload explicitly without
-routing new records through the old OCB framing. Deduct the full 32-byte record
-overhead plus timestamp/SSP overhead from the selected MTU. Tick idle sessions
-for key retirement. Ensure ACK-carrying traffic allows progress without unbounded
-control loops. Handle hard-limit closure as a fresh-authentication requirement.
-Never reset a packet counter after EAGAIN, EMSGSIZE, port hopping or disconnection.
+## SSP and socket integration
 
-Only a newest authenticated record may update the remote address; out-of-order
-payload acceptance must not roll the route backward. Add path validation and
-anti-amplification appropriate to the server's threat model. Preserve terminal
-state convergence independently of packet delivery order.
+Connect one `Session` to each client/server pair while preserving Mosh's state
+synchronization and prediction. Keep the new records separate from the legacy
+OCB framing, and deduct the 32-byte record overhead plus timestamp and SSP
+overhead from the selected datagram budget.
 
-## 3. End-to-end and platform acceptance
+Schedule idle `tick` calls for key retirement and timely acknowledgement-carrying
+traffic. Treat hard-limit closure as requiring fresh authentication. Never reset
+packet numbers after failed sends, port changes or disconnection.
 
-Use real local SSH/PTY sessions and a controllable UDP relay for duplication,
-loss, delay, reordering, port/address migration and blackout/resume. Assert remote
-terminal convergence and remote-confirmed keystroke latency, not only local
-prediction. Exercise simultaneous rekey, lost ACK, active output across a key
-limit, rebind races, malformed bootstrap and explicit v2/v3 mismatch. A logical
-clock test is not evidence of a real six-month session.
+Only an authenticated newest record may update the peer address. Reordered
+payloads must not move it back to an old path. Add path validation,
+anti-amplification and admission limits without breaking state convergence.
 
-Native Windows support requires terminal, process, signal/event, networking and
-secure-secret-custody work. A C++17 core compiling on Windows is not a native
-Windows Mosh client. Packages must avoid replacing stock executables implicitly.
+## End-to-end tests and platforms
 
-## 4. Privacy evaluation and promotion
+Test real SSH/PTY sessions through a controllable UDP relay with loss, duplication,
+delay, reordering, migration and blackout/resume. Check remote terminal
+convergence and remote-confirmed keystroke latency, not only local prediction.
+Include simultaneous updates, lost acknowledgements, output across key limits,
+rebinding races, malformed bootstrap and explicit protocol mismatches.
 
-Freeze the integrated build, observer model, corpus lineage, detector, thresholds
-and whole-session/domain holdouts before scoring. Compare stock Mosh, the retained
-clear-header prototype and this successor using actual candidate traffic. Never
-call a trace with fields manually removed an implemented candidate capture.
-Test bounded padding or idle scheduling only when attribution studies justify
-it. Independent review and challenge/replication are prerequisites for strong,
-bounded release claims. No PR here authorizes deployment or universal assurance.
+Native Windows support requires terminal, process, event, networking and secret
+handling work beyond compiling the record layer. Packaging must not silently
+replace upstream executables.
+
+## Evaluation and release readiness
+
+Collect actual integrated traffic for the comparisons in the
+[evaluation guide](evaluation.md). Freeze builds, observer capabilities,
+detectors, thresholds and whole-session holdouts before scoring. Label synthetic
+trace changes as ablations rather than implemented protocol captures.
+
+Evaluate padding or idle-scheduling changes only when measurements justify them.
+Independent security review, end-to-end acceptance and reproducible traffic
+measurements are required before making corresponding release claims.

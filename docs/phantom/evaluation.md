@@ -1,77 +1,70 @@
-# PHANTOM WEAVE transfer and evaluation contract
+# Traffic-analysis evaluation
 
-The research informs how this design is questioned. It has not certified this
-implementation. The initial conclusion is narrowly testable: the old explicit
-sequence/direction field and the prototype's clear epoch/ACK header are absent
-from the new record grammar. Statistical identification remains unmeasured.
+This evaluation approach is informed by PHANTOM WEAVE research. It separates
+removal of explicit wire markers from statistical resistance to identification.
+No traffic-classification results or independent replication are available yet.
 
-| Research generation | Decision adopted here | Executable evidence / remaining work |
-| --- | --- | --- |
-| PW1 | Freeze stock, clear-header and opaque candidates; inventory wire markers, sizes and timing before concealment changes. | Primitive and full-record vectors bind this candidate's bytes. Actual matched traffic corpora remain uncollected. |
-| PW2 | Distinguish observation failure from privacy, and protocol identification from activity inference and cross-flow linkage. Keep evaluator truth out of passive features. | observer.py rejects unknown/privileged fields and invalid observation attestations; tests exercise session/domain split leakage. Independent capture health, hard negatives and false-join experiments remain required. |
-| PW3 | Challenge residual joint signals, sparse/asymmetric observations, epoch transitions, multiple timescales and unseen workload/path combinations. Freeze candidate-aware detectors before holdouts. | Loss/reorder/epoch tests preserve protocol behavior; partition and frozen-threshold guards implement part of the evaluation discipline. No trained classifier, held-out PW challenge or replication has been run. |
+The executable tools in `evaluation/` validate inputs, dataset partitions and
+fixed-threshold scores. They are not a trained detector or a complete experiment.
 
-PW generations are not assurance levels. A hypothetical stronger future observer
-requires its own contract. No existing PW4 test or universal undetectability claim
-is asserted.
+## Observer inputs and ground truth
 
-## Observer and truth separation
+The initial passive feature extractor accepts only `time_ms`,
+`udp_payload_bytes` and `direction`. Direction is +1 or -1 according to the
+observer's declared endpoint orientation, not a privileged client identity.
+Timestamps must be ordered; absolute time is not emitted as a feature. Empty,
+malformed and incomplete packet records are rejected.
 
-For the initial executable feature scaffold, each packet has only `time_ms`,
-`udp_payload_bytes` and `direction` (+1/-1 from a declared network-observer
-orientation, not an oracle-provided client identity). Times must be ordered.
-Absolute time is not emitted as a feature. Empty or incomplete observations fail
-validation. The small aggregate feature set is a scaffold, not the strongest
-possible detector and not a complete PW classifier implementation.
+Session, workload, domain and collection identities are evaluator-only grouping
+inputs. Process IDs, true RTT, key epochs, migration labels and MoshWatch telemetry
+must not enter classifier features. Allowlists help prevent direct leakage, but
+acquisition hosts, generators, timestamp precision and missingness can still
+introduce indirect clues. Match acquisition methods and audit those variables.
 
-Ground-truth session, workload, domain and collection identities are evaluator-only
-inputs to partition validation. Host process identity, true RTT, migration labels,
-key epoch and MoshWatch fields are forbidden in the feature input. Separate files
-and allowlists help, but cannot establish independent administration by themselves.
-Feature values may still encode acquisition nuisance variables: use acquisition
-matching, label permutation and host/generator/serialization audits.
+Raw-payload inspection requires a separately declared observer contract. Track
+capture loss and session health independently: broken instrumentation or a failed
+session must not count as improved privacy.
 
-A wire-marker detector may inspect raw payload bytes under a SEPARATELY declared
-observer contract. Do not silently broaden this scaffold's input vocabulary.
-Observation-health metrics must account for capture loss, supported instrumentation
-and functioning sessions without supplying privileged labels to the classifier.
+## Experimental design
 
-## Candidate-aware challenge design
+Compare pinned upstream Mosh and Phantom builds under matched typing, editing,
+redraw, bulk-output and idle workloads. An optional clear-header reference can
+help isolate the contribution of header protection. Capture actual traffic from
+each implementation; label manually altered traces as ablations. Standalone
+record tests are not captures of an integrated SSP terminal.
 
-Compare exact builds of stock Mosh, PR60's clear-header experiment and opaque
-Phantom records. An adapter-free record test is not an SSP terminal capture.
-Collect matched human-like typing, editing, redraw, bulk output and idle workloads,
-with loss/reorder/MTU/latency variation and migration around key transitions.
+Include realistic interactive UDP background traffic, not just bulk transfers.
+Measure three outcomes separately: identifying the protocol, characterizing
+interactive activity, and linking flows across migrations. Linkage tests must
+report false joins between unrelated sessions as well as missed true joins.
 
-Include realistic interactive UDP near-neighbours, not only bulk traffic. Score
-protocol identification, interactive-activity inference and cross-flow joins
-separately; continuity must report false joins as well as missed true joins.
-Shared NAT, unrelated concurrent sessions and asymmetric pre/post-migration views
-are important challenge cases. Evaluate sparse windows and long histories, and
-hold out entire sessions plus workload, domain or collection families. Random
-packet-level splits from the same session are invalid.
+Challenge combined length, direction and timing signals at multiple timescales.
+Vary latency, loss, reordering and MTU, and examine sparse or asymmetric views
+around key updates, outages and migrations. Include shared NATs and concurrent
+unrelated sessions as difficult background cases.
 
-Select candidate-aware detector hyperparameters and operating thresholds using
-training/validation only. Seal a manifest of candidate, detector, corpus,
-observer, duration, split and thresholds before exposing test labels. Failed
-holdouts become evidence, not another training split advertised as unseen.
-Fresh candidates require fresh holdouts. Independent challenge construction and
-replication are not replaced by this repository's own tests.
+Hold out entire sessions and additional workload, path/domain or collection
+families. Randomly splitting packets from the same session is invalid. Train
+detectors against the candidate itself, select settings and thresholds on
+training/validation data, then freeze the build, detector, corpus, observer,
+observation duration and partition before exposing test labels. Revisions tuned
+on a failed holdout require a fresh holdout.
 
-## Scoring and acceptance
+## Reporting
 
-`score_fixed_threshold` reports absolute TP/FP counts, TPR/FPR and descriptive
-95% Wilson intervals. It never searches a threshold on test labels or returns
-an automatic privacy pass. Its inputs must represent independent evaluation units;
-overlapping windows require session-clustered analysis instead. Boolean attestations
-are caller assertions, not proof of healthy observation or an honest partition.
-Report abstention and review rates separately; do not drop uncertain samples to
-inflate performance. Low-FPR claims require enough independent background units
-and useful confidence bounds, not zero errors in a tiny sample.
+`score_fixed_threshold` reports true/false-positive counts, rates and descriptive
+95% Wilson intervals. It neither selects a threshold on test labels nor returns
+an automatic privacy pass. Inputs must be independent evaluation units;
+overlapping windows require session-clustered analysis instead. Caller-supplied
+health flags are assertions, not proof of valid collection or independent units.
 
-The research's suggested 50% relative TPR reduction at 1% FPR and about 5 ms added
-p95 remote-confirmed latency are proposed engineering budgets, not ratified release
-criteria. Absolute residual detectability, uncertainty, byte/radio costs and
-security/recovery gates also matter. `contract.json` intentionally has no accepted
-threshold or measured result yet. Timing/length shaping, padding, cover traffic
-and artificial roaming are deferred until measurements identify material benefit.
+Report observation health, abstention, absolute residual identification rates and
+uncertainty alongside remote-confirmed latency, recovery, byte overhead and radio
+cost. Low false-positive claims require enough independent background samples,
+not simply zero errors in a small dataset. Publish null and negative results.
+
+The [experiment contract](../../evaluation/contract.json) leaves acceptance
+thresholds and measurements unset until an experiment is specified and run.
+Independent challenge construction and replication are needed for stronger
+claims. Padding, traffic shaping and idle-scheduling changes should follow
+measured benefit rather than assumptions about how random traffic ought to look.

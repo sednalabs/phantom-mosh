@@ -1,69 +1,58 @@
 # Phantom Mosh
 
-An experimental, upstream-derived Mosh descendant investigating long-lived key
-management and unnecessary wire metadata. This is an independent project, not an
-official Mosh release and not a claim of undetectability.
+Phantom Mosh is an experimental fork of [Mosh](https://github.com/mobile-shell/mosh)
+exploring long-lived session key management and reduced exposure of transport
+metadata. It preserves upstream history and is not an official Mosh release.
 
-## What is implemented
+## Status
 
-The initial contribution implements a C++17/OpenSSL record layer with directional
-HKDF-SHA-256 secrets, ChaCha20-Poly1305 authenticated encryption, protected full
-packet numbers, encrypted epoch acknowledgements, bounded key selection,
-automatic acknowledgement-gated key updates, replay rejection and old-key
-retirement. It includes RFC known-answer tests, an independently implemented
-Python wire oracle, a deterministic lossy-network model, actual loopback UDP
-migration tests and executable evaluation-leakage guards.
+The new record layer implements directional HKDF-SHA-256 key derivation,
+ChaCha20-Poly1305 encryption, protected packet numbers, encrypted epoch
+acknowledgements, acknowledgement-gated key updates, replay protection and
+previous-key retirement.
 
-**The inherited `mosh`, `mosh-client` and `mosh-server` still use upstream Mosh v2.**
-The new record layer is not yet connected to SSH bootstrap, SSP, terminal state or
-packaging. There is no working `--protocol=v3` option in this PR. Keeping that
-boundary visible is preferable to silently changing the protocol of existing
-binaries. See the [integration plan](docs/phantom/integration.md).
+**The existing `mosh`, `mosh-client` and `mosh-server` executables still use
+upstream Mosh v2.** The new record layer is not yet connected to SSH bootstrap,
+terminal handling or Mosh's State Synchronization Protocol (SSP). There is no
+`--protocol=v3` option or native Windows client yet.
 
-## Build and test the record layer
+The protocol is experimental and needs independent security review before
+production use. Traffic fingerprint resistance has not been measured. See the
+[security notes](docs/phantom/security.md) for limitations.
 
-Use a maintained OpenSSL installation with development headers, CMake 3.16+,
-a C++17 compiler and Python 3.8+:
+## Build and test
+
+The standalone record layer requires a C++17 compiler, CMake 3.16+, Python 3.8+
+and OpenSSL development headers. Use a maintained OpenSSL release.
 
 ```sh
 cmake -S src/phantom -B build/phantom -DCMAKE_BUILD_TYPE=Release
 cmake --build build/phantom --parallel
-ctest --test-dir build/phantom --output-on-failure
+(cd build/phantom && ctest --output-on-failure)
 ```
 
-For Clang address/undefined-behavior sanitizer tests, add
-`-DCMAKE_CXX_COMPILER=clang++ -DPHANTOM_SANITIZERS=ON` in a separate build directory.
-The core and tests do not require a running SSH server. The real UDP test is
-POSIX-only; native Windows terminal support has not been implemented or validated.
-The upstream Autotools build remains unchanged. Its original instructions and
-attribution are preserved byte-for-byte in [the upstream README](docs/upstream-mosh.md).
+Tests cover cryptographic reference vectors, an independent wire-format oracle,
+key updates, replay, loss and reordering, simulated long outages, UDP rebinding
+and evaluation input validation. The UDP test is POSIX-only; no SSH server is
+needed for these tests.
 
-## What the results do not establish
+For sanitizer builds and formatting, see [CONTRIBUTING.md](CONTRIBUTING.md).
+The inherited Autotools build is unchanged; its instructions are in the
+[upstream README](docs/upstream-mosh.md).
 
-Removing the original clear sequence marker does not prove statistical traffic
-fingerprint resistance. Fixed overhead, lengths, direction, timing, bootstrap
-correlation and roaming may remain identifying. A symmetric key ratchet is not
-post-compromise recovery, and does not introduce a fresh DH exchange or
-post-quantum key exchange. This new protocol composition needs independent review
-before production use.
+## Documentation
 
-PHANTOM WEAVE informs the [evaluation contract](docs/phantom/evaluation.md), not a
-certification. PW1, PW2 and PW3 are research generations. There is no asserted
-PW4 assurance level. Unit tests and simulated outages are not a traffic-analysis
-study, a six-month deployment, or proof of universal concealment.
+- [Protocol specification](docs/phantom/protocol-draft-01.md): wire format, key schedule and state machine.
+- [Security notes](docs/phantom/security.md): assumptions, limitations and review targets.
+- [Integration roadmap](docs/phantom/integration.md): bootstrap, SSP and platform work.
+- [Traffic-analysis evaluation](docs/phantom/evaluation.md): observer inputs and experiment design.
 
-## Project boundaries and provenance
+[MoshWatch](https://github.com/sednalabs/moshwatch) remains a separate monitoring
+project, not a transport dependency. Evaluation draws on PHANTOM WEAVE research;
+the methods and limitations are described in the evaluation guide.
 
-This repository preserves `mobile-shell/mosh` ancestry. MoshWatch remains a
-separate observer/evaluator, not a dependency of the transport or a source of
-privileged features for a passive classifier. The first clear-header experiment
-remains in [MoshWatch PR #60](https://github.com/sednalabs/moshwatch/pull/60);
-this implementation supersedes that proposed wire layout rather than publishing
-it as a privacy improvement.
+## License
 
-Read the [protocol draft](docs/phantom/protocol-draft-01.md),
-[security review notes](docs/phantom/security.md),
-[repository decision](docs/phantom/adr-0001.md) and
-[engineering evidence](engineering/initial-pr/README.md).
-Inherited licenses and credits remain intact. New-file terms and the OpenSSL
-linking permission are in [COPYING.phantom](COPYING.phantom).
+Upstream licenses and attribution are preserved. See [COPYING](COPYING),
+[COPYING.iOS](COPYING.iOS) and [COPYING.phantom](COPYING.phantom) for the applicable
+terms and the OpenSSL linking permission for new files.

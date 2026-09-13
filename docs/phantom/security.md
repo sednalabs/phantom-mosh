@@ -1,68 +1,61 @@
-# Security review notes and claim boundaries
+# Security considerations
 
-This draft is experimental and has not received independent cryptographic review.
-It implements protocol mechanisms; it does not certify a production terminal.
+The record protocol is experimental and has not received independent
+cryptographic review. The existing Mosh executables do not use it yet.
 
-## Threats addressed by the component
+## Implemented protections
 
-A passive observer should no longer receive the old explicit direction/sequence
-nonce or the prototype's clear version/flags/epoch/ACK header. An unauthenticated
-sender cannot legitimately advance epoch, ACK or replay state without a valid
-AEAD record. A receiver does at most three key trials per bounded datagram.
-Single-owner numbering, per-key usage limits, replay rejection and authenticated
-ACK-gated updates address nonce reuse, duplication and outage desynchronization.
+The record layer encrypts epoch and acknowledgement fields, protects packet
+numbers with a separate header-protection key, and derives independent traffic
+keys for each direction. It authenticates and validates records before advancing
+replay, acknowledgement or receive-epoch state.
 
-These statements concern the source contract and its tests, not a proof of the
-custom header-protection composition or immunity to implementation defects.
+Key updates require an authenticated acknowledgement of the current epoch.
+Receiver work is bounded to three key candidates per datagram, with a replay
+window, per-key usage limits and previous-key retirement. Accepting a reordered
+record does not authorize changing the peer address.
 
-## Threats NOT solved
+The [protocol specification](protocol-draft-01.md) defines these mechanisms and
+the caller's responsibilities. Tests exercise the implementation; they do not
+constitute a proof of the protocol's security.
 
-A compromised current/successor traffic secret predicts future symmetric ratchet
-states. No post-compromise healing, fresh Diffie-Hellman, PQ exchange or new SSH
-identity scheme is present. Historical-epoch secrecy depends on genuinely erasing
-the bootstrap, master and prior keys across all endpoints and their copies.
-Keeping a bootstrap string in a launcher, log, environment, crash dump, swap,
-checkpoint or VM snapshot defeats that property. OPENSSL_cleanse does not prove
-that registers, compiler/runtime copies, the OS or a hypervisor retain no secrets.
+## Limitations
 
-The process must remain alive and retain valid state across a network outage.
-Reboot, fork/clone reuse, checkpoint rollback and session restoration are not
-supported. Reusing a bootstrap with reset counters is forbidden. Clone detection
-is not implemented. A production integration needs a documented custody/lifetime
-review, a dump policy, and fresh authenticated setup on restart.
+**No post-compromise recovery.** A compromised traffic secret or precomputed
+successor can reveal future symmetric-ratchet states. There is no fresh
+Diffie-Hellman or post-quantum exchange. Protection of earlier epochs depends on
+erasing the bootstrap, master, previous keys and their copies at both endpoints.
+Logs, environment variables, crash dumps, swap and snapshots can retain secrets;
+explicit memory cleansing does not prove that every system-level copy is gone.
 
-Wire direction is still visible from IP/UDP endpoints. Lengths, timing, periodic
-ACKs, bootstrap correlation, duration and migration continuity are not concealed.
-Removing fields is not indistinguishability from random bytes, benign UDP or QUIC.
-There is no constant-rate cover, artificial jitter or protocol impersonation.
+**No session restoration.** The process must retain its state across network
+outages. Restart, process cloning and VM rollback must not reuse a bootstrap with
+reset counters. Clone detection and checkpoint restoration are not implemented.
+A production integration needs fresh authenticated setup on restart and a
+reviewed secret-handling and crash-dump policy.
 
-Bounded work is not network-flood defense. Routing, anti-amplification, peer-address
-validation, per-source admission and scheduler fairness belong to the transport.
-No generic exception text should be reflected back to unauthenticated traffic.
-Cryptographic failure-budget exhaustion intentionally sacrifices availability to
-avoid exceeding the local exposure bound. An attacker may cause that closure.
+**No measured fingerprint resistance.** Packet direction, lengths, timing,
+bootstrap correlation and migration continuity remain observable. Removing
+explicit fields does not make traffic indistinguishable from other UDP protocols.
+There is no cover traffic, timing jitter or protocol impersonation.
 
-## Review decisions and open questions
+**No flood or path-validation guarantee.** Bounded decryption work does not solve
+flooding. Address validation, anti-amplification, admission limits and scheduling
+belong to the transport integration. Verification-budget exhaustion closes the
+session; an attacker can cause that loss of availability. Do not reflect local
+exception details back to unauthenticated senders.
 
-Retain the directional acknowledgement-gated ratchet. Reject clear lifecycle
-metadata. Protect the complete packet number instead of guessing last+1 under
-loss. Try only adjacent precomputed receive epochs; never keep a session master
-for arbitrary recovery. Keep a bounded previous-key grace slot. Make successful
-out-of-order delivery distinct from permission to rebind a peer address.
+## Review priorities
 
-The full eight-byte HP mask, sample selection, cross-epoch acceptance rules and
-usage caps need independent cryptographic/protocol review. RFC vectors establish
-primitive/API conformance, not a composition proof. Constant-time properties of
-the chosen maintained OpenSSL build remain a dependency. Allocation/provider
-fault injection and exhaustive formal state-machine verification remain follow-up
-work; exceptional-path ownership is reviewed but not universally proved.
+The eight-byte header-protection mask, sample selection, cross-epoch acceptance
+rules and usage limits need independent protocol review. RFC vectors check
+primitive conformance, not the security of this custom composition. A maintained
+OpenSSL implementation is a dependency, including its timing behavior.
 
-Tests cover each-byte/bit tampering, wrong roles/keys, authenticated invalid fields,
-replay, ordering, simultaneous updates, old-key retirement, hard limits and a
-seeded lossy model. The real UDP test validates the exposed rebind rule only.
-A new terminal frontend must pass an independent end-to-end review and tests
-before any release claim. Existing upstream Mosh tests must continue to pass.
+Further work includes provider/allocation failure injection, state-machine
+verification, secret-lifetime review and end-to-end SSH/terminal testing. The
+loopback UDP test checks admission and rebinding rules, not complete terminal
+integration. A simulated long outage is not a long-running deployment.
 
-Security reports belong in this fork's GitHub security reporting facilities when
-available. Do not attach live session keys, terminal contents or private captures
-to public issues. This PR does not create a private reporting service.
+Do not attach live keys, terminal contents or private captures to public reports.
+Check the repository's Security page for available reporting options.
