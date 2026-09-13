@@ -36,7 +36,8 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ clang libssl-dev python3
+          sudo apt-get install -y cmake g++ clang libssl-dev python3 openssh-client openssh-server
+          sudo mkdir -p /run/sshd
       - name: Record tested revision and toolchain
         run: |
           mkdir -p test-results
@@ -49,6 +50,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DPHANTOM_SANITIZERS=${{ matrix.sanitizers }}
+          -DPHANTOM_REQUIRE_SSH_TESTS=ON
       - name: Build
         run: cmake --build build/phantom --parallel 2
       - name: Test

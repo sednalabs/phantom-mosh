@@ -10,12 +10,16 @@ framing, exact profile/role selection, secret-buffer cleanup and a total read
 deadline. Process tests hand a bootstrap through a pipe or stream socket and
 exchange encrypted UDP records with an independent test peer.
 
-Add distinctly named launcher, client and server entry points. Authenticate the
-profile identifier, endpoint roles and fresh 256-bit bootstrap secret through
-SSH, retaining its host-key authentication. Use the startup codec on a dedicated
-control stream and check successful SSH completion before admitting the session.
-Reject profile mismatches without silent fallback; keep v2 compatibility an
-explicit choice and test it against a pinned upstream build.
+The [Linux SSH supervisor](ssh-startup.md) now implements host-trust enforcement,
+quoted remote command construction, bounded startup output, successful-exit
+validation, cancellation and local process-group cleanup. Tests include a real
+isolated SSH server and an independently implemented encrypted UDP responder.
+
+Next, add production launcher/client/server entry points and a remote session
+owner with a startup-confirmation deadline. A failed local SSH attempt must not
+leave an unconfirmed remote session alive indefinitely. Bind UDP routing to the
+SSH-authenticated endpoint, including configuration aliases and proxies. Keep v2
+compatibility explicit and test it against a pinned upstream build.
 
 Keep the secret out of command arguments, environment variables and logs. Pass
 only the dedicated descriptor to the child, close unused pipe ends, and erase
