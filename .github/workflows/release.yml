@@ -9,7 +9,7 @@ on:
 
 jobs:
   macports-cache:
-    runs-on: macos-12
+    runs-on: macos-15-intel
 
     steps:
     - uses: actions/checkout@v2
@@ -27,15 +27,12 @@ jobs:
         cache-name: cache-macports
       with:
         path: /opt/local
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('macosx/port-deps.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+        key: macos-15-intel-${{ runner.arch }}-macports-2.12.6-${{ hashFiles('macosx/port-deps.sh') }}
 
     - name: "setup MacPorts environment"
       run: |
-        curl -L "https://github.com/macports/macports-base/releases/download/v2.7.2/MacPorts-2.7.2-12-Monterey.pkg" --output macports.pkg
+        curl --fail --location "https://github.com/macports/macports-base/releases/download/v2.12.6/MacPorts-2.12.6-15-Sequoia.pkg" --output macports.pkg
+        echo "2d6d58ff3ff60e70f8dc05cb2df9df3137e3d7c0c6d6f6236d68c8ba03343e34  macports.pkg" | shasum -a 256 -c -
         sudo installer -pkg macports.pkg -target /
         ./macosx/port-deps.sh deps
 
@@ -45,7 +42,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-12]
+        os: [ubuntu-22.04, macos-15-intel]
 
     steps:
     - uses: actions/checkout@v2
@@ -76,11 +73,7 @@ jobs:
         cache-name: cache-macports
       with:
         path: /opt/local
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('macosx/port-deps.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+        key: macos-15-intel-${{ runner.arch }}-macports-2.12.6-${{ hashFiles('macosx/port-deps.sh') }}
 
     - name: "describe macos build environment"
       if: ${{ startsWith(matrix.os, 'macos') }}

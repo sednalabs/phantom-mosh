@@ -4,6 +4,7 @@
 #define PHANTOM_MOSH_SSH_STARTUP_H
 
 #include "startup.h"
+#include "session_offer.h"
 #include <chrono>
 #include <string>
 
@@ -32,5 +33,11 @@ struct SshStartupOptions
 // Does not select a UDP host, create a terminal, or guarantee remote cleanup:
 // the server must bound the lifetime of unconfirmed sessions independently.
 StartupOffer start_over_ssh( const SshStartupOptions& options );
+
+// Selects the session control profile and its address-bound offer. Endpoint
+// bytes are accepted only after SSH output, EOF and successful exit validate.
+// The advertised server-local address may require an explicit trusted override
+// behind NAT; a proxy configuration does not implicitly carry the UDP path.
+SessionOffer start_session_over_ssh( const SshStartupOptions& options );
 } // namespace phantom
 #endif
