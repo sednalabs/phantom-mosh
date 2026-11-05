@@ -68,11 +68,58 @@ static void connection( const char* host )
   server.stop();
   CHECK( server.state() == ChannelState::closed && server.fds().empty() );
 }
+static void automatic_path_probe( const char* host )
+{
+  auto ss = SessionSocket::bind( host );
+  auto cs = SessionSocket::bind( host );
+  const auto endpoint = ss.local();
+  SspConnection client( SessionChannel::client( std::move( cs ), endpoint, Bootstrap::parse( KEY ), 0 ), 0 );
+  auto server = SessionChannel::server( std::move( ss ), Bootstrap::parse( KEY ), 0 );
+  std::uint64_t now = 0;
+  for ( ; now < 1000 && ( !client.get_has_remote_addr() || server->state() != ChannelState::active ); ++now ) {
+    client.service( now );
+    server->service( now );
+  }
+  CHECK( client.get_has_remote_addr() );
+  const auto fds = client.fds();
+  // Silence alone does not generate periodic path probes.
+  now += 2 * SspConnection::PATH_SILENCE_MS;
+  client.service( now );
+  CHECK( client.state() == ChannelState::active );
+  const std::string fragment( SspConnection::FRAGMENT_HEADER, 'x' );
+  client.send( fragment );
+  server->service( now );
+  const auto sent = now;
+  now += SspConnection::PATH_SILENCE_MS - 1;
+  // Authenticated but malformed application data must not suppress recovery.
+  CHECK( server->send( Bytes { 0 }, now ) );
+  client.service( now );
+  CHECK( client.state() == ChannelState::active && client.wait_time() == 1 );
+  client.service( ++now );
+  CHECK( now - sent == SspConnection::PATH_SILENCE_MS );
+  CHECK( client.state() == ChannelState::connecting && client.fds() == fds );
+  for ( unsigned i = 0; i < 1000 && !client.get_has_remote_addr(); ++i ) {
+    client.service( ++now );
+    server->service( now );
+  }
+  CHECK( client.get_has_remote_addr() && client.fds() == fds );
+  // A valid authenticated response resets the unanswered-traffic deadline.
+  client.send( fragment );
+  server->service( now );
+  CHECK( server->send( encode_ssp( { 1, 0, 0 }, fragment ), now ) );
+  client.service( ++now );
+  CHECK( client.recv() == fragment );
+  now += 2 * SspConnection::PATH_SILENCE_MS;
+  client.service( now );
+  CHECK( client.state() == ChannelState::active );
+}
 int main()
 {
   try {
     connection( "127.0.0.1" );
     connection( "::1" );
+    automatic_path_probe( "127.0.0.1" );
+    automatic_path_probe( "::1" );
     std::cout << "PASS real UDP SSP admission, maximum fragment, malformed framing and bounded queue\n";
     return 0;
   } catch ( const std::exception& e ) {

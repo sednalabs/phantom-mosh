@@ -103,6 +103,10 @@ public:
   // Application sends pause until return-path validation succeeds. A new local
   // socket must have the same address family; no address or protocol fallback.
   void rebind( SessionSocket&& socket, std::uint64_t now_ms );
+  bool is_client() const noexcept { return bool( client_ ); }
+  // Revalidate a silently changed NAT path without replacing the local socket.
+  // Only established clients may request this; existing recovery deadlines stay fixed.
+  void revalidate_path( std::uint64_t now_ms );
   void stop() noexcept;
 
 private:

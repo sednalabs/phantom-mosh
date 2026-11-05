@@ -60,8 +60,10 @@ void SspConnection::service( std::uint64_t now )
   timing_.advance( now );
   now_ = now;
   auto batch = channel_->service( now );
-  if ( batch.activated || batch.migrated )
+  if ( batch.activated || batch.migrated ) {
     timing_.reset_path();
+    unanswered_since_.reset();
+  }
   refresh_peer();
   try {
     for ( auto& data : batch.data ) {
@@ -70,7 +72,13 @@ void SspConnection::service( std::uint64_t now )
            || !decode_ssp( data, stamp ) )
         continue;
       timing_.received( stamp, now );
+      unanswered_since_.reset();
       received_.push_back( std::move( data ) );
+    }
+    if ( channel_->is_client() && channel_->state() == ChannelState::active && unanswered_since_
+         && now - *unanswered_since_ >= PATH_SILENCE_MS ) {
+      channel_->revalidate_path( now );
+      timing_.reset_path();
     }
   } catch ( ... ) {
     clear_received();
@@ -79,7 +87,14 @@ void SspConnection::service( std::uint64_t now )
 }
 int SspConnection::wait_time() const
 {
-  return pending() ? 0 : channel_->wait_ms( now_ );
+  if ( pending() )
+    return 0;
+  auto wait = channel_->wait_ms( now_ );
+  if ( channel_->is_client() && channel_->state() == ChannelState::active && unanswered_since_ ) {
+    const auto elapsed = now_ - *unanswered_since_;
+    wait = std::min( wait, static_cast<int>( elapsed >= PATH_SILENCE_MS ? 0 : PATH_SILENCE_MS - elapsed ) );
+  }
+  return wait;
 }
 const std::vector<int> SspConnection::fds() const
 {
@@ -113,6 +128,8 @@ void SspConnection::send( const std::string& fragment )
   wipe( data );
   if ( sent ) {
     timing_.sent( stamp, now_ );
+    if ( channel_->is_client() && !unanswered_since_ )
+      unanswered_since_ = now_;
     send_error_.clear();
   } else {
     // Treat retryable local send failure as UDP loss, not a peer ACK. SSP owns
@@ -130,6 +147,7 @@ void SspConnection::rebind( SessionSocket&& socket, std::uint64_t now )
 {
   timing_.advance( now );
   channel_->rebind( std::move( socket ), now );
+  unanswered_since_.reset();
   now_ = now;
   clear_received();
   timing_.reset_path();
@@ -143,6 +161,7 @@ void SspConnection::start_close( std::uint64_t now )
 }
 void SspConnection::stop() noexcept
 {
+  unanswered_since_.reset();
   clear_received();
   timing_.reset_path();
   channel_->stop();
