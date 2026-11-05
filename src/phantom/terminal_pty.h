@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Additional permission to link with OpenSSL: see COPYING.phantom.
+#ifndef PHANTOM_MOSH_TERMINAL_PTY_H
+#define PHANTOM_MOSH_TERMINAL_PTY_H
+#include <string>
+#include <sys/types.h>
+#include <vector>
+
+namespace phantom {
+// Linux PTY ownership primitive. Construct BEFORE generating session secrets:
+// fork duplicates the caller's address space even though exec closes descriptors.
+// Caller must retain SIGCHLD=SIG_DFL without SA_NOCLDWAIT and exclusive reaping
+// of this child throughout the object's lifetime. No concurrent fork/signal changes.
+// Cleanup kills the initial process group, not separate shell job-control groups;
+// this is not whole-session containment and must not be used as that guarantee.
+// The command uses an absolute executable path and argv, never shell fallback.
+class TerminalPty
+{
+public:
+  TerminalPty( const std::vector<std::string>& argv, unsigned short rows, unsigned short columns );
+  ~TerminalPty();
+  TerminalPty( const TerminalPty& ) = delete;
+  TerminalPty& operator=( const TerminalPty& ) = delete;
+  // Borrowed, nonblocking master. Caller handles partial writes/EAGAIN and Linux
+  // EIO at slave close. Never close or transfer this descriptor.
+  int fd() const noexcept { return master_; }
+  pid_t pid() const noexcept { return child_; }
+  void resize( unsigned short rows, unsigned short columns );
+  // Nonblocking reap. Returns true when the child has exited, preserving status.
+  bool exited( int& status );
+
+private:
+  int master_ = -1;
+  pid_t child_ = -1;
+  int status_ = 0;
+};
+} // namespace phantom
+#endif
