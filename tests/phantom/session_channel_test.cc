@@ -28,6 +28,8 @@ Bootstrap key()
 }
 int fault_fd = -1;
 int fault_errno = 0;
+int receive_fault_fd = -1;
+int receive_fault_errno = 0;
 bool drop_once = false;
 bool hold_once = false;
 Bytes withheld;
@@ -126,7 +128,44 @@ extern "C" ssize_t __wrap_sendto( int fd,
   }
   return __real_sendto( fd, data, size, flags, peer, peer_size );
 }
+extern "C" ssize_t __real_recvmsg( int, msghdr*, int );
+extern "C" ssize_t __wrap_recvmsg( int fd, msghdr* message, int flags )
+{
+  if ( fd == receive_fault_fd ) {
+    receive_fault_fd = -1;
+    errno = receive_fault_errno;
+    receive_fault_errno = 0;
+    return -1;
+  }
+  return __real_recvmsg( fd, message, flags );
+}
 namespace {
+void receive_error_recovery( const char* host )
+{
+  Pair p( host );
+  p.connect();
+  for ( int error : { EINTR, EAGAIN, EWOULDBLOCK, ENOBUFS, ENETUNREACH, EHOSTUNREACH, ECONNREFUSED, EMSGSIZE } ) {
+    for ( bool client : { false, true } ) {
+      auto& receiver = client ? p.c : p.s;
+      auto& sender = client ? p.s : p.c;
+      CHECK( sender->send( { 9 }, p.now ) );
+      receive_fault_fd = receiver->fd();
+      receive_fault_errno = error;
+      auto interrupted = receiver->service( p.now );
+      CHECK( interrupted.data.empty() && interrupted.datagrams_read == 0 );
+      CHECK( receiver->state() == ChannelState::active && receiver->end_reason() == ChannelEnd::none );
+      CHECK( receiver->service( p.now ).data == std::vector<Bytes> { Bytes { 9 } } );
+      CHECK( receiver->service( p.now ).data.empty() );
+      // Subsequent freshly sealed traffic remains usable across key updates.
+      CHECK( sender->send( { 10 }, p.now ) );
+      CHECK( receiver->service( p.now ).data == std::vector<Bytes> { Bytes { 10 } } );
+    }
+  }
+  receive_fault_fd = p.c->fd();
+  receive_fault_errno = EBADF;
+  rejects( [&] { p.c->service( p.now ); } );
+  CHECK( p.c->fd() == -1 && p.c->end_reason() == ChannelEnd::failed );
+}
 void data_bidirectional( const char* host )
 {
   Pair p( host );
@@ -431,6 +470,8 @@ int main()
     handshake_loss_and_deadline();
     discard_budget();
     loss_and_fresh_nonce();
+    receive_error_recovery( "127.0.0.1" );
+    receive_error_recovery( "::1" );
     reordering_and_migration();
     established_outage_does_not_expire();
     explicit_recovery_deadline_is_fixed();

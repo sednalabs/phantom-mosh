@@ -132,7 +132,10 @@ SocketRead SessionSocket::receive_one()
   message.msg_iovlen = 1;
   const auto size = ::recvmsg( fd_, &message, MSG_DONTWAIT );
   if ( size < 0 ) {
-    if ( errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK || errno == ECONNREFUSED )
+    // Linux also reports asynchronous path errors from earlier UDP sends here.
+    // A failed route must not destroy an authenticated session or its counters.
+    if ( errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOBUFS || errno == ENETUNREACH
+         || errno == EHOSTUNREACH || errno == ECONNREFUSED || errno == EMSGSIZE )
       return { false, {} };
     throw Error( "UDP receive failed" );
   }

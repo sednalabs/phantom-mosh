@@ -150,6 +150,59 @@ static void redraw( Terminal::Complete& terminal, unsigned seed )
   }
   terminal.act( "\x1b[0m\x1b[35;1HUTF-8: \xce\xbb \xd0\x96 \xe7\x95\x8c\x1b[36;1H" );
 }
+// Complete::operator== uses shared row identity to detect changes within one
+// endpoint's copy-on-write history. Independently decoded peers need a semantic
+// comparison, including presentation attributes, not shared allocation identity.
+static bool same_terminal( const Terminal::Complete& a, const Terminal::Complete& b )
+{
+  const auto& left = a.get_fb();
+  const auto& right = b.get_fb();
+  if ( a.get_echo_ack() != b.get_echo_ack() || !( left.ds == right.ds )
+       || left.get_window_title() != right.get_window_title() || left.get_clipboard() != right.get_clipboard()
+       || left.get_bell_count() != right.get_bell_count() )
+    return false;
+  for ( int row = 0; row < left.ds.get_height(); ++row ) {
+    for ( int col = 0; col < left.ds.get_width(); ++col ) {
+      const auto& x = *left.get_cell( row, col );
+      const auto& y = *right.get_cell( row, col );
+      std::string x_text, y_text;
+      x.print_grapheme( x_text );
+      y.print_grapheme( y_text );
+      if ( x_text != y_text || x.get_wide() != y.get_wide() || x.get_wrap() != y.get_wrap()
+           || !( x.get_renditions() == y.get_renditions() ) || !( x.get_hyperlink() == y.get_hyperlink() ) )
+        return false;
+    }
+  }
+  return true;
+}
+static void convergence_oracle()
+{
+  Terminal::Complete source( 80, 24 ), independent( 80, 24 );
+  CHECK( !( source == independent ) ); // distinct row allocations are expected
+  CHECK( same_terminal( source, independent ) );
+  redraw( source, 31 );
+  independent.apply_string( source.diff_from( independent ) );
+  CHECK( same_terminal( source, independent ) );
+  // Negative controls keep the oracle sensitive to actual state corruption.
+  for ( const std::string& change :
+        { std::string( "\x1b[1;1H\xce\xbb" ), std::string( "\x1b[35;8H?" ), std::string( "\x1b[2;2H" ) } ) {
+    auto changed = independent;
+    changed.act( change );
+    CHECK( !same_terminal( source, changed ) );
+  }
+  auto styled = independent;
+  std::string first_cell;
+  independent.get_fb().get_cell( 0, 0 )->print_grapheme( first_cell );
+  styled.act( "\x1b[1;1H\x1b[7m" + first_cell + "\x1b[0m\x1b[36;1H" );
+  CHECK( !same_terminal( source, styled ) );
+  auto resized = independent;
+  resized.act( Parser::Resize( 81, 25 ) );
+  CHECK( !same_terminal( source, resized ) );
+  auto acknowledged = independent;
+  acknowledged.register_input_frame( 42, 1000 );
+  acknowledged.set_echo_ack( 2000 );
+  CHECK( !same_terminal( source, acknowledged ) );
+}
 static void convergence( const char* host )
 {
   using namespace impairment;
@@ -227,8 +280,8 @@ static void convergence( const char* host )
   mode = Mode::reliable;
   deliver_delayed();
   auto converged = [&] {
-    return delivered_input == expected_input && displayed == server.get_current_state()
-           && client.get_latest_remote_state().state == server.get_current_state();
+    return delivered_input == expected_input && same_terminal( displayed, server.get_current_state() )
+           && same_terminal( client.get_latest_remote_state().state, server.get_current_state() );
   };
   for ( unsigned i = 0; i < 2000 && !converged(); ++i )
     step();
@@ -280,6 +333,7 @@ int main()
   try {
     CHECK( std::setlocale( LC_ALL, "C.UTF-8" ) != nullptr );
     fragment_accounting();
+    convergence_oracle();
     convergence( "127.0.0.1" );
     convergence( "::1" );
     CHECK( !impairment::over_budget && impairment::full_size > 0 );
