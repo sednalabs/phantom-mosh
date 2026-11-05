@@ -37,6 +37,9 @@ set_tests_properties(phantom-evaluation-guards PROPERTIES TIMEOUT 15)
 add_test(NAME phantom-matched-comparison-guards
   COMMAND ${Python3_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR}/../../evaluation -p test_compare.py)
 set_tests_properties(phantom-matched-comparison-guards PROPERTIES TIMEOUT 15)
+add_test(NAME phantom-pilot-evidence-guards
+  COMMAND ${Python3_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR}/../../evaluation -p test_pilot_evidence.py)
+set_tests_properties(phantom-pilot-evidence-guards PROPERTIES TIMEOUT 15)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_test(NAME phantom-loopback-observer-guards
     COMMAND ${Python3_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR}/../../evaluation -p test_loopback_pilot.py)

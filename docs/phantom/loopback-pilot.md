@@ -1,12 +1,13 @@
 # Real terminal loopback pilot, 2026-11-05
 
 This is a small descriptive measurement, **not a fingerprint-resistance result**.
-The measured Phantom terminal emits substantially more UDP datagrams and payload
-bytes than ordinary Mosh in this fixture. No classifier, background corpus,
+The first collection exposed excessive idle traffic in the experimental Phantom
+terminal. After an ACK-only echo-loop bugfix, an identical second collection
+shows the flood is gone, while payload-size and typing-count differences remain. No classifier, background corpus,
 identification rate, linkage outcome, confidence interval or privacy pass is
 reported. Do not generalize these counts to Internet paths or other workloads.
 
-## What ran
+## First collection: before the fix
 
 Six matched pairs, comprising three idle pairs and three typing pairs, with a
 fixed 12-second post-warmup observation window per independent session. All 12
@@ -33,7 +34,7 @@ zero socket overflow drops and equal received/forwarded counts in every session.
   Idle receives no commands during its window. Both get identical warmup and
   final completion checks outside the window.
 
-## Observations
+## Before-fix observations
 
 Each list contains the three independent 12-second windows. Byte counts include
 UDP payload only, summed across both directions, not UDP/IP/link headers.
@@ -48,7 +49,38 @@ UDP payload only, summed across both directions, not UDP/IP/link headers.
 These are useful regression observations: the implementations have visibly
 different length/timing/direction metadata in this setup. They do not establish
 which mechanism causes the difference or how well a detector generalizes. No
-protocol code was changed in response to these observations.
+protocol code changed during this first collection. The subsequent server
+correction and separate regression collection are documented below.
+
+## Post-fix regression collection
+
+The terminal lane traced the feedback loop to registering an echo ACK on every
+remote SSP state-number change, including ACK-only states with empty UserStream.
+PR #7 commit `ebd798fd58cca6540a3c6da9869f7124e194ac7c` registers echo ACKs only
+for actual nonempty input, matching the inherited application behavior. The
+terminal lane added an independent fail-before/pass-after SSH regression.
+This is a correctness fix, not packet camouflage or a statistical privacy claim.
+
+The exact same collector file hash, workload specification and upstream binary
+hashes were verified before the rerun. Three new pairs per workload were collected,
+again with all 12 sessions passing the remote witnesses and clean exit. There
+were no excluded/retried sessions or observed relay socket drops. The original
+before corpus is retained unchanged; the
+[after-fix corpus](../../evaluation/results/loopback-pilot-2026-11-05-after-fix/)
+is a separate collection. Session IDs are local to each corpus.
+
+| Workload | Implementation | Datagrams per window | UDP payload bytes per window | Mean datagrams/s | Mean payload bytes/s |
+| --- | --- | --- | --- | ---: | ---: |
+| Idle | Mosh | 8, 8, 8 | 506, 557, 558 | 0.667 | 45.028 |
+| Idle | Phantom fixed | 8, 8, 8 | 898, 890, 888 | 0.667 | 74.333 |
+| Typing | Mosh | 14, 14, 14 | 1408, 1428, 1393 | 1.167 | 117.472 |
+| Typing | Phantom fixed | 17, 17, 17 | 2163, 2135, 2154 | 1.417 | 179.222 |
+
+Phantom's idle counts fell from 111–114 to 8, and typing counts from 206–207
+to 17. Equal idle packet counts are **not traffic equivalence**: payload bytes
+remain different, and typing still has more datagrams. This is a post-fix
+regression observation informed by the first collection, not an untouched privacy
+holdout. Both collections retain all the instrumentation/sample limitations below.
 
 ## Evidence and reproduction
 
@@ -67,7 +99,7 @@ python3 evaluation/compare.py evaluation/results/loopback-pilot-2026-11-05/corpu
 python3 -m unittest discover -s evaluation -p 'test_*.py' -v
 ```
 
-To recollect, build the pinned upstream and Phantom sources, then use a fresh
+To recollect the first collection, build the pinned upstream and Phantom sources, then use a fresh
 output directory on a controlled Linux host. The runner needs `sshd`,
 `ssh-keygen`, Python 3 and Linux `SO_RXQ_OVFL`; it does not require root, packet
 capture privileges or changes to the operator's SSH configuration. Substitute
@@ -83,6 +115,12 @@ python3 evaluation/loopback_pilot.py \
   --phantom-sha ce7d4a1020c8167df66feecccf0b392a40359a0f \
   --pairs 3 --output /fresh/output/directory
 ```
+
+For the post-fix collection, use Phantom binaries built from
+`ebd798fd58cca6540a3c6da9869f7124e194ac7c`, pass that revision as
+`--phantom-sha`, and choose another fresh output directory. Analyze its corpus
+with the same comparator command. The evidence regression test reanalyzes both
+published corpora and checks their file hashes and complete attempt ledgers.
 
 The runner writes its plan before launching sessions, alternates implementation
 order by pair index, records every attempted session, stops on failure, and never
