@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Additional permission to link with OpenSSL: see COPYING.phantom.
-#include "ssp_timing.h"
 #include "ssp_test.h"
+#include "ssp_timing.h"
 #include <cmath>
 #include <iostream>
 
@@ -69,7 +69,11 @@ static void stale_unknown_and_failed()
   CHECK( a.samples() == 0 );
   CHECK( a.prepare( 12001 ).echo == 0 ); // stale replies are not echoed indefinitely
   bool rejected = false;
-  try { a.advance( 12000 ); } catch ( const Error& ) { rejected = true; }
+  try {
+    a.advance( 12000 );
+  } catch ( const Error& ) {
+    rejected = true;
+  }
   CHECK( rejected );
 }
 static void bounded_history_and_migration()

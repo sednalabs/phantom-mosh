@@ -37,8 +37,8 @@
 #include <ctime>
 #include <list>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "src/network/network.h"
 #include "src/network/transportsender.h"
@@ -46,7 +46,8 @@
 
 namespace Network {
 /* Explicit opt-in construction of a non-stock connection backend. */
-struct ConnectionInit {};
+struct ConnectionInit
+{};
 
 template<class MyState, class RemoteState, class ConnectionType = Connection>
 class Transport

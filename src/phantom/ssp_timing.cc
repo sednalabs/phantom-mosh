@@ -38,10 +38,10 @@ bool decode_ssp( const Bytes& data, SspStamp& stamp ) noexcept
 {
   if ( data.size() < SSP_TIMING_BYTES || data[0] != 1 )
     return false;
-  const SspStamp candidate { get( data.data() + 1, 8 ), get( data.data() + 9, 8 ),
-                            static_cast<std::uint32_t>( get( data.data() + 17, 4 ) ) };
-  if ( !candidate.serial || candidate.hold_ms > SspTiming::MAX_HOLD_MS
-       || ( !candidate.echo && candidate.hold_ms ) )
+  const SspStamp candidate { get( data.data() + 1, 8 ),
+                             get( data.data() + 9, 8 ),
+                             static_cast<std::uint32_t>( get( data.data() + 17, 4 ) ) };
+  if ( !candidate.serial || candidate.hold_ms > SspTiming::MAX_HOLD_MS || ( !candidate.echo && candidate.hold_ms ) )
     return false;
   stamp = candidate;
   return true;

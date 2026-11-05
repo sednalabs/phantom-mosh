@@ -2,18 +2,18 @@
 // Additional permission to link with OpenSSL: see COPYING.phantom.
 // Real SSP and terminal models over real encrypted UDP. The linker interposer
 // impairs only transport delivery; it never supplies SSP ACKs or remote state.
-#include "ssp_transport.h"
-#include "ssp_test.h"
 #include "src/statesync/completeterminal.h"
 #include "src/statesync/user.h"
+#include "ssp_test.h"
+#include "ssp_transport.h"
 #include <cerrno>
 #include <clocale>
 #include <cstring>
 #include <iostream>
 #include <optional>
 #include <random>
-#include <type_traits>
 #include <sys/socket.h>
+#include <type_traits>
 
 using namespace phantom;
 using Client = SspTransport<Network::UserStream, Terminal::Complete>;
@@ -21,7 +21,12 @@ using Server = SspTransport<Terminal::Complete, Network::UserStream>;
 static constexpr auto KEY = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8";
 
 namespace impairment {
-enum class Mode { reliable, chaotic, blackhole };
+enum class Mode
+{
+  reliable,
+  chaotic,
+  blackhole
+};
 static Mode mode = Mode::reliable;
 static std::uint64_t calls = 0, drops = 0, duplicates = 0, reordered = 0, failures = 0, full_size = 0;
 static bool over_budget = false;
@@ -41,12 +46,20 @@ static void deliver_delayed()
   if ( impairment::delayed ) {
     auto packet = std::move( *impairment::delayed );
     impairment::delayed.reset();
-    __real_sendto( packet.fd, packet.data.data(), packet.data.size(), packet.flags,
-                   reinterpret_cast<const sockaddr*>( &packet.address ), packet.size );
+    __real_sendto( packet.fd,
+                   packet.data.data(),
+                   packet.data.size(),
+                   packet.flags,
+                   reinterpret_cast<const sockaddr*>( &packet.address ),
+                   packet.size );
   }
 }
-extern "C" ssize_t __wrap_sendto( int fd, const void* data, size_t size, int flags,
-                                  const sockaddr* address, socklen_t address_size )
+extern "C" ssize_t __wrap_sendto( int fd,
+                                  const void* data,
+                                  size_t size,
+                                  int flags,
+                                  const sockaddr* address,
+                                  socklen_t address_size )
 {
   using namespace impairment;
   ++calls;
@@ -84,10 +97,11 @@ extern "C" ssize_t __wrap_sendto( int fd, const void* data, size_t size, int fla
 static void fragment_accounting()
 {
   static_assert( std::is_same_v<Network::Transport<Network::UserStream, Terminal::Complete>,
-    Network::Transport<Network::UserStream, Terminal::Complete, Network::Connection>> );
+                                Network::Transport<Network::UserStream, Terminal::Complete, Network::Connection>> );
   Network::Connection stock( "127.0.0.1", "0" );
-  CHECK( stock.max_payload_size() == static_cast<std::size_t>( stock.get_MTU()
-    - Network::Connection::ADDED_BYTES - Crypto::Session::ADDED_BYTES ) );
+  CHECK( stock.max_payload_size()
+         == static_cast<std::size_t>( stock.get_MTU() - Network::Connection::ADDED_BYTES
+                                      - Crypto::Session::ADDED_BYTES ) );
   CHECK( SspConnection::MAX_FRAGMENT + SSP_TIMING_BYTES + SESSION_HEADER + RECORD_OVERHEAD == MAX_DATAGRAM );
   CHECK( Network::Fragment::frag_header_len == SspConnection::FRAGMENT_HEADER );
   Network::Fragmenter fragmenter;
@@ -115,7 +129,11 @@ static void fragment_accounting()
   CHECK( complete && assembly.get_assembly().SerializeAsString() == instruction.SerializeAsString() );
   for ( std::size_t budget : { std::size_t { 0 }, std::size_t { 9 }, std::size_t { 10 } } ) {
     bool rejected = false;
-    try { fragmenter.make_fragments( instruction, budget ); } catch ( const std::length_error& ) { rejected = true; }
+    try {
+      fragmenter.make_fragments( instruction, budget );
+    } catch ( const std::length_error& ) {
+      rejected = true;
+    }
     CHECK( rejected );
   }
 }
@@ -149,10 +167,16 @@ static void convergence( const char* host )
   auto client_socket = SessionSocket::client_to( endpoint );
   Network::UserStream initial_input;
   Terminal::Complete initial_terminal( 80, 24 );
-  Client client( initial_input, initial_terminal,
-    SessionChannel::client( std::move( client_socket ), endpoint, Bootstrap::parse( KEY ), now, policy, crypto ), now );
-  Server server( initial_terminal, initial_input,
-    SessionChannel::server( std::move( server_socket ), Bootstrap::parse( KEY ), now, {}, policy, crypto ), now );
+  Client client(
+    initial_input,
+    initial_terminal,
+    SessionChannel::client( std::move( client_socket ), endpoint, Bootstrap::parse( KEY ), now, policy, crypto ),
+    now );
+  Server server(
+    initial_terminal,
+    initial_input,
+    SessionChannel::server( std::move( server_socket ), Bootstrap::parse( KEY ), now, {}, policy, crypto ),
+    now );
   Network::UserStream expected_input, delivered_input;
   Terminal::Complete displayed( 80, 24 );
   std::uint64_t last_input_frame = 0;
@@ -184,7 +208,9 @@ static void convergence( const char* host )
       expected_input.push_back( Parser::UserByte( c ) );
     }
   };
-  for ( unsigned i = 0; i < 900 && ( client.state() != ChannelState::active || server.state() != ChannelState::active ); ++i )
+  for ( unsigned i = 0;
+        i < 900 && ( client.state() != ChannelState::active || server.state() != ChannelState::active );
+        ++i )
     step();
   CHECK( client.state() == ChannelState::active && server.state() == ChannelState::active );
   redraw( server.get_current_state(), 31 );
@@ -201,9 +227,8 @@ static void convergence( const char* host )
   mode = Mode::reliable;
   deliver_delayed();
   auto converged = [&] {
-    return delivered_input == expected_input
-      && displayed == server.get_current_state()
-      && client.get_latest_remote_state().state == server.get_current_state();
+    return delivered_input == expected_input && displayed == server.get_current_state()
+           && client.get_latest_remote_state().state == server.get_current_state();
   };
   for ( unsigned i = 0; i < 2000 && !converged(); ++i )
     step();
@@ -258,7 +283,8 @@ int main()
     convergence( "127.0.0.1" );
     convergence( "::1" );
     CHECK( !impairment::over_budget && impairment::full_size > 0 );
-    CHECK( impairment::drops > 0 && impairment::duplicates > 0 && impairment::reordered > 0 && impairment::failures > 0 );
+    CHECK( impairment::drops > 0 && impairment::duplicates > 0 && impairment::reordered > 0
+           && impairment::failures > 0 );
     std::cout << "PASS byte budget and delivery impairment assertions\n";
     return 0;
   } catch ( const std::exception& e ) {

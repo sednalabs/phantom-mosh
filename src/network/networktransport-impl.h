@@ -41,9 +41,9 @@ using namespace Network;
 
 template<class MyState, class RemoteState, class ConnectionType>
 Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_state,
-                                            RemoteState& initial_remote,
-                                            const char* desired_ip,
-                                            const char* desired_port )
+                                                            RemoteState& initial_remote,
+                                                            const char* desired_ip,
+                                                            const char* desired_port )
   : connection( desired_ip, desired_port ), sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( connection.clock(), 0, initial_remote ) ),
     receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )
@@ -53,10 +53,10 @@ Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_sta
 
 template<class MyState, class RemoteState, class ConnectionType>
 Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_state,
-                                            RemoteState& initial_remote,
-                                            const char* key_str,
-                                            const char* ip,
-                                            const char* port )
+                                                            RemoteState& initial_remote,
+                                                            const char* key_str,
+                                                            const char* ip,
+                                                            const char* port )
   : connection( key_str, ip, port ), sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( connection.clock(), 0, initial_remote ) ),
     receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )
@@ -67,9 +67,9 @@ Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_sta
 template<class MyState, class RemoteState, class ConnectionType>
 template<class... Args>
 Transport<MyState, RemoteState, ConnectionType>::Transport( MyState& initial_state,
-                                                          RemoteState& initial_remote,
-                                                          ConnectionInit,
-                                                          Args&&... args )
+                                                            RemoteState& initial_remote,
+                                                            ConnectionInit,
+                                                            Args&&... args )
   : connection( std::forward<Args>( args )... ), sender( &connection, initial_state ),
     received_states( 1, TimestampedState<RemoteState>( connection.clock(), 0, initial_remote ) ),
     receiver_quench_timer( 0 ), last_receiver_state( initial_remote ), fragments(), verbose( 0 )

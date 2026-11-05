@@ -29,7 +29,7 @@ public:
   static constexpr std::uint64_t MAX_SAMPLE_MS = 10000;
   static constexpr std::uint32_t MAX_HOLD_MS = 1000;
   explicit SspTiming( std::uint64_t now ) : now_( now ) {}
-  SspStamp prepare( std::uint64_t now ); // consumes a serial even if send fails
+  SspStamp prepare( std::uint64_t now );                 // consumes a serial even if send fails
   void sent( const SspStamp& stamp, std::uint64_t now ); // only on socket success
   void received( const SspStamp& stamp, std::uint64_t now );
   void advance( std::uint64_t now );

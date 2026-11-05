@@ -4,8 +4,8 @@
 #define PHANTOM_MOSH_SSP_CONNECTION_H
 
 #include "session_channel.h"
-#include "ssp_timing.h"
 #include "src/network/network.h"
+#include "ssp_timing.h"
 #include <deque>
 
 namespace phantom {

@@ -27,7 +27,11 @@ static void connection( const char* host )
   CHECK( server.pending() && server.wait_time() == 0 && server.recv() == fragment );
   CHECK( !server.pending() );
   bool empty_rejected = false;
-  try { server.recv(); } catch ( const Network::NetworkException& e ) { empty_rejected = e.the_errno == EAGAIN; }
+  try {
+    server.recv();
+  } catch ( const Network::NetworkException& e ) {
+    empty_rejected = e.the_errno == EAGAIN;
+  }
   CHECK( empty_rejected );
   for ( std::size_t n = 0; n < SSP_TIMING_BYTES + SspConnection::FRAGMENT_HEADER; ++n ) {
     CHECK( raw->send( Bytes( n ), now ) );
@@ -45,13 +49,21 @@ static void connection( const char* host )
   CHECK( decode_ssp( reply.data[0], stamp ) );
   CHECK( std::string( reply.data[0].begin() + SSP_TIMING_BYTES, reply.data[0].end() ) == fragment );
   bool oversized = false;
-  try { server.send( fragment + 'x' ); } catch ( const Error& ) { oversized = true; }
+  try {
+    server.send( fragment + 'x' );
+  } catch ( const Error& ) {
+    oversized = true;
+  }
   CHECK( oversized );
   // A retained batch cannot be silently overwritten by another receive pump.
   CHECK( raw->send( encode_ssp( { 2, 0, 0 }, fragment ), now ) );
   server.service( ++now );
   bool undrained = false;
-  try { server.service( now ); } catch ( const Error& ) { undrained = true; }
+  try {
+    server.service( now );
+  } catch ( const Error& ) {
+    undrained = true;
+  }
   CHECK( undrained && server.recv() == fragment );
   server.stop();
   CHECK( server.state() == ChannelState::closed && server.fds().empty() );

@@ -209,7 +209,9 @@ void TransportSender<MyState, ConnectionType>::send_empty_ack( void )
 }
 
 template<class MyState, class ConnectionType>
-void TransportSender<MyState, ConnectionType>::add_sent_state( uint64_t the_timestamp, uint64_t num, MyState& state )
+void TransportSender<MyState, ConnectionType>::add_sent_state( uint64_t the_timestamp,
+                                                               uint64_t num,
+                                                               MyState& state )
 {
   sent_states.push_back( TimestampedState<MyState>( the_timestamp, num, state ) );
   if ( sent_states.size() > 32 ) { /* limit on state queue */
@@ -319,8 +321,7 @@ void TransportSender<MyState, ConnectionType>::send_in_fragments( const std::str
     shutdown_tries++;
   }
 
-  std::vector<Fragment> fragments = fragmenter.make_fragments(
-    inst, connection->max_payload_size() );
+  std::vector<Fragment> fragments = fragmenter.make_fragments( inst, connection->max_payload_size() );
   for ( std::vector<Fragment>::iterator i = fragments.begin(); i != fragments.end(); i++ ) {
     connection->send( i->tostring() );
 

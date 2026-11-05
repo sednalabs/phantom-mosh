@@ -29,8 +29,13 @@ pkg_check_modules(SSP_PROTOBUF REQUIRED IMPORTED_TARGET protobuf)
 pkg_check_modules(SSP_TINFO REQUIRED IMPORTED_TARGET tinfo)
 find_package(ZLIB REQUIRED)
 add_library(phantom_ssp STATIC ssp_timing.cc ssp_connection.cc)
-target_link_libraries(phantom_ssp PUBLIC phantom_session_udp)
-target_include_directories(phantom_ssp PUBLIC "${PHANTOM_MOSH_BUILD_DIR}" "${PHANTOM_SOURCE_ROOT}")
+# SspTransport is a public template: its consumers need the inherited engine
+# archives and generated-header/dependency usage requirements as well.
+target_link_libraries(phantom_ssp PUBLIC phantom_session_udp ${SSP_ARCHIVES}
+  PkgConfig::SSP_PROTOBUF PkgConfig::SSP_TINFO ZLIB::ZLIB OpenSSL::Crypto)
+target_include_directories(phantom_ssp PUBLIC
+  "${PHANTOM_MOSH_BUILD_DIR}/src/include"
+  "${PHANTOM_MOSH_BUILD_DIR}" "${PHANTOM_SOURCE_ROOT}")
 target_compile_options(phantom_ssp PRIVATE -Wall -Wextra -Wpedantic -Werror)
 foreach(test timing connection convergence)
   add_executable(phantom_ssp_${test}_test "../../tests/phantom/ssp_${test}_test.cc")
@@ -39,6 +44,6 @@ foreach(test timing connection convergence)
   add_test(NAME phantom-ssp-${test} COMMAND phantom_ssp_${test}_test)
   set_tests_properties(phantom-ssp-${test} PROPERTIES TIMEOUT 60)
 endforeach()
-target_link_libraries(phantom_ssp_convergence_test PRIVATE ${SSP_ARCHIVES}
-  PkgConfig::SSP_PROTOBUF PkgConfig::SSP_TINFO ZLIB::ZLIB OpenSSL::Crypto)
+# Keep the convergence test dependent only on phantom_ssp, so it also checks
+# that downstream consumers inherit the complete compile/link interface.
 target_link_options(phantom_ssp_convergence_test PRIVATE "-Wl,--wrap=sendto")
