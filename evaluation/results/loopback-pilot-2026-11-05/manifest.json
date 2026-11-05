@@ -1,0 +1,43 @@
+{
+  "schema": "loopback-pilot-01",
+  "workload": {
+    "window_seconds": 12,
+    "warmup": "printf 'WARM:%s\\n' \"$((6*7))\"\n",
+    "typing": [
+      [
+        2,
+        "printf 'RESULT:%s\\n' \"$((6*7))\"\n"
+      ],
+      [
+        4,
+        "printf 'RESULT:%s\\n' \"$((7*7))\"\n"
+      ],
+      [
+        6,
+        "printf 'RESULT:%s\\n' \"$((8*7))\"\n"
+      ]
+    ]
+  },
+  "pairs_per_workload": 3,
+  "workloads": [
+    "idle",
+    "typing"
+  ],
+  "order": "alternate implementation order by pair index",
+  "binary_hashes": {
+    "stock-client": "043bbbbd3e4680dedd79a028a4eff8faa6f1dba800ff8018ca9f06214e9ac549",
+    "stock-server": "1846f6affd7482a8a4d659a327c48a2d535ab6f628b56ea059b300f2698ded88",
+    "phantom-client": "75e77df7827c211d66484bae1895a56ec3ffa0a5c61ad6327e1ff4a6ab582ffb",
+    "phantom-server": "b79acc8c7b1d5272e9df55910559900a43bdaf265973ecfe890d00fc9a9c05d9"
+  },
+  "stock_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+  "phantom_sha": "ce7d4a1020c8167df66feecccf0b392a40359a0f",
+  "runner_sha256": "8cb0a6e47256925f4016b4e089ecce033795b961db81b813a7cf498e13d5a3fe",
+  "kernel": "6.18.57",
+  "limitations": [
+    "loopback userspace relay, not passive tap",
+    "no classifier or privacy result",
+    "upstream source build, not packaged-release qualification",
+    "small pilot, not the planned 30-pair/60-second campaign"
+  ]
+}

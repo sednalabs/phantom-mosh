@@ -1,0 +1,32 @@
+{
+  "upstream_verified_url": "https://github.com/mobile-shell/mosh",
+  "upstream_ref_checked": "refs/heads/master",
+  "upstream_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+  "upstream_worktree_clean": true,
+  "upstream_version_stamp": "mosh 1.4.0 build decd9b7",
+  "upstream_configure": [
+    "--disable-hardening",
+    "--without-utempter"
+  ],
+  "upstream_make": "make -j2",
+  "upstream_full_make_check": "not_run; functional terminal witnesses checked in all six stock sessions",
+  "phantom_source": "https://github.com/sednalabs/phantom-mosh/pull/7",
+  "phantom_sha": "ce7d4a1020c8167df66feecccf0b392a40359a0f",
+  "phantom_build_type": "Release",
+  "phantom_cxx_flags": "-D_FORTIFY_SOURCE=2 -O3 -DNDEBUG",
+  "compiler": "GCC 14.2.0",
+  "protobuf": "3.21.12",
+  "openssl": "3.5.7",
+  "ncursesw": "6.5.20250216",
+  "zlib": "1.3.1",
+  "python": "3.12.14",
+  "openssh": "10.0p2",
+  "prior_exploration": {
+    "preflight_sessions": 4,
+    "fork_v2_sessions": 12,
+    "session_failures": 0,
+    "reason_not_primary": "preflight used fork inherited v2 binaries; final primary collection uses independently built verified upstream source",
+    "no_protocol_changes_based_on_measurement": true
+  },
+  "raw_input_file_sha256": "f76d7fad5c772bba7c15841cd62eea06a201077c284ffdd94a59d4b206df9e94"
+}

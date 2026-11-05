@@ -1,10 +1,11 @@
 # Matched traffic measurement protocol
 
-Status: harness validated with synthetic inputs; **real terminal measurements
-not collected**. This protocol does not establish resistance to identification,
-activity inference, or cross-flow linkage. The current base revision
-`4fb6005f9d8db8228024fd12560341e0d501ea1a` has no Phantom terminal frontend.
-Do not substitute control-probe traffic for an interactive terminal corpus.
+Status: the harness has synthetic regression tests and a separate
+[small real-terminal loopback pilot](loopback-pilot.md). The full campaign below
+has not been run. Neither this protocol nor that pilot establishes resistance
+to identification, activity inference, or cross-flow linkage. The pilot uses
+experimental terminal binaries from PR #7; these are not included in this
+evaluation branch. Do not substitute control-probe traffic for terminals.
 
 ## Reproduce the available validation
 
@@ -39,7 +40,8 @@ The CMake test suite also runs these comparison guard tests.
 4. Have an independent check confirm remote command completion and screen
    convergence. Client-side prediction is not a remote success acknowledgement.
    The terminal lane must supply the executable invocation and this check before
-   collecting a real terminal corpus. They are not available in this revision.
+   collecting a real terminal corpus. PR #7 supplies an experimental frontend;
+   the pilot runner checks computed remote output, not local echo.
 
 ## Matched collection
 
@@ -104,9 +106,8 @@ are assertions, not proof of faithful collection or independent sessions.
 
 Paired summary differences are not classification accuracy or indistinguishability.
 No detector is trained, no threshold is selected, and there are no confidence
-intervals or automatic pass/fail privacy verdicts. No actual terminal corpus,
-background UDP corpus, independent replication or radio-energy measurement is
-included. Do not populate `evaluation/contract.json` measurements from the
+intervals or automatic pass/fail privacy verdicts. The included loopback pilot is not the full terminal campaign. No background
+UDP corpus, independent replication or radio-energy measurement is included. Do not populate `evaluation/contract.json` measurements from the
 synthetic fixture or use this comparator as the full privacy evaluation.
 
 After collecting a valid pilot, perform the separate held-out detector experiment
