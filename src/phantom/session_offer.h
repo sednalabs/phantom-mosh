@@ -6,6 +6,7 @@
 
 namespace phantom {
 constexpr std::size_t SESSION_OFFER_MAX = 160;
+constexpr std::string_view TERMINAL_PROFILE = "phantom-mosh/terminal/draft-01";
 struct SessionOffer
 {
   UdpEndpoint server;
@@ -26,15 +27,17 @@ public:
 private:
   std::array<char, SESSION_OFFER_MAX> bytes_ {};
   std::size_t size_ = 0;
-  friend SessionFrame make_session_offer( const UdpEndpoint&, const Bootstrap& );
+  friend SessionFrame make_session_offer( const UdpEndpoint&, const Bootstrap&, std::string_view );
 };
-SessionFrame make_session_offer( const UdpEndpoint& endpoint, const Bootstrap& secret );
+SessionFrame make_session_offer( const UdpEndpoint& endpoint,
+                                 const Bootstrap& secret,
+                                 std::string_view profile = SESSION_PROFILE );
 // Exactly one canonical numeric endpoint, role pair and secret over a dedicated
 // authenticated stream. No banner scanning, DNS, fallback or partial admission.
 class SessionOfferDecoder
 {
 public:
-  SessionOfferDecoder() = default;
+  explicit SessionOfferDecoder( std::string_view profile = SESSION_PROFILE );
   ~SessionOfferDecoder();
   SessionOfferDecoder( const SessionOfferDecoder& ) = delete;
   SessionOfferDecoder& operator=( const SessionOfferDecoder& ) = delete;
@@ -45,8 +48,14 @@ private:
   std::array<char, SESSION_OFFER_MAX> bytes_ {};
   std::size_t size_ = 0;
   bool closed_ = false;
+  std::string_view profile_;
   void clear() noexcept;
   [[noreturn]] void reject();
+};
+class TerminalOfferDecoder : public SessionOfferDecoder
+{
+public:
+  TerminalOfferDecoder() : SessionOfferDecoder( TERMINAL_PROFILE ) {}
 };
 } // namespace phantom
 #endif

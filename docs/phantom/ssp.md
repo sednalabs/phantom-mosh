@@ -7,8 +7,9 @@ It does not wrap legacy OCB packets or implement a second state protocol.
 
 The existing Mosh executables still select the default `Network::Connection`
 backend and v2 wire protocol. The control-only Phantom server/probe do not create
-terminals or select the SSP application. Connecting this adapter to a production
-launcher, PTY and terminal frontend remains a separate integration step.
+terminals or select the SSP application. The separate experimental
+[terminal executables](terminal-integration.md) now connect this adapter to a PTY
+and local frontend. Production integration and packaging remain incomplete.
 
 ## Ownership and scheduling
 
@@ -112,6 +113,8 @@ state acknowledgements, recovery after a logical 180-day blackout, socket
 migration and SSP shutdown before channel close. It also asserts datagram sizes
 at the socket boundary, rather than checking only a constant in isolation.
 
-This is terminal-state convergence, not a launched shell or PTY acceptance test.
+This convergence test exercises terminal state rather than a launched shell.
+The separate `phantom-terminal-ssh` test exercises the actual experimental
+SSH-to-PTY client/server; see [terminal-integration.md](terminal-integration.md).
 It does not establish native Windows support, packaging readiness, independent
 cryptographic assurance or privacy against statistical classifiers.

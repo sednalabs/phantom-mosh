@@ -39,5 +39,7 @@ StartupOffer start_over_ssh( const SshStartupOptions& options );
 // The advertised server-local address may require an explicit trusted override
 // behind NAT; a proxy configuration does not implicitly carry the UDP path.
 SessionOffer start_session_over_ssh( const SshStartupOptions& options );
+// Explicit terminal application selection; never accepts control-only offers.
+SessionOffer start_terminal_over_ssh( const SshStartupOptions& options );
 } // namespace phantom
 #endif

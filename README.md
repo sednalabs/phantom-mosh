@@ -18,10 +18,12 @@ requires existing host trust and handles deadlines, cancellation and child clean
 **The existing `mosh`, `mosh-client` and `mosh-server` executables still use
 upstream Mosh v2.** An experimental Linux `phantom-mosh-server` now owns a
 bounded remote-session lifecycle, and `phantom-mosh-probe` performs authenticated
-startup, UDP return-path confirmation and close. Neither starts a terminal.
+startup, UDP return-path confirmation and close. Neither starts a terminal. The opt-in SSP build also provides separate
+experimental `phantom-mosh-terminal` and `phantom-mosh-terminal-server` binaries;
+see [terminal setup and limitations](docs/phantom/terminal-integration.md).
 Both executables use a shared, bounded UDP channel with application-datagram
 delivery, control retries and established-session path recovery. Mosh's State
-Synchronization Protocol (SSP) is not yet integrated. There is no
+Synchronization Protocol (SSP) is available as an explicit Linux build opt-in. There is no
 `--protocol=v3` option or native Windows client yet.
 
 The protocol is experimental and needs independent security review before

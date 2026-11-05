@@ -267,4 +267,8 @@ SessionOffer start_session_over_ssh( const SshStartupOptions& options )
 {
   return start_selected<SessionOfferDecoder>( options, "--session-profile", SESSION_PROFILE );
 }
+SessionOffer start_terminal_over_ssh( const SshStartupOptions& options )
+{
+  return start_selected<TerminalOfferDecoder>( options, "--terminal-profile", TERMINAL_PROFILE );
+}
 } // namespace phantom

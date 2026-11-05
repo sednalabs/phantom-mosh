@@ -76,6 +76,32 @@ int main()
       moved.clear();
       CHECK( moved.view().empty() );
     }
+    {
+      const auto endpoint = UdpEndpoint::parse( "127.0.0.1", 12345 );
+      const auto key = Bootstrap::random();
+      auto terminal = make_session_offer( endpoint, key, TERMINAL_PROFILE );
+      invalid( terminal.view() ); // control-only decoder never accepts terminal
+      TerminalOfferDecoder decoder;
+      decoder.feed( terminal.view() );
+      CHECK( decoder.finish().server == endpoint );
+      auto control = make_session_offer( endpoint, key );
+      bool rejected = false;
+      try {
+        TerminalOfferDecoder wrong;
+        wrong.feed( control.view() );
+        wrong.finish();
+      } catch ( const Error& ) {
+        rejected = true;
+      }
+      CHECK( rejected );
+      rejected = false;
+      try {
+        make_session_offer( endpoint, key, "unknown" );
+      } catch ( const Error& ) {
+        rejected = true;
+      }
+      CHECK( rejected );
+    }
     invalid( std::string( SESSION_OFFER_MAX + 1, 'A' ) );
     std::cout
       << "PASS endpoint-bound offers, every split/truncation, canonical input, profiles and secret ownership\n";

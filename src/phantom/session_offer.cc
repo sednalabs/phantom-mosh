@@ -33,8 +33,10 @@ SessionFrame& SessionFrame::operator=( SessionFrame&& other ) noexcept
   }
   return *this;
 }
-SessionFrame make_session_offer( const UdpEndpoint& endpoint, const Bootstrap& secret )
+SessionFrame make_session_offer( const UdpEndpoint& endpoint, const Bootstrap& secret, std::string_view profile )
 {
+  if ( profile != SESSION_PROFILE && profile != TERMINAL_PROFILE )
+    throw Error( "invalid application profile" );
   SessionFrame frame;
   const auto host = endpoint.host();
   const auto key = secret.encode();
@@ -43,7 +45,7 @@ SessionFrame make_session_offer( const UdpEndpoint& endpoint, const Bootstrap& s
   if ( number.ec != std::errc {} )
     throw Error( "invalid session port" );
   for ( auto part : { PREFIX,
-                      SESSION_PROFILE,
+                      profile,
                       ROLES,
                       std::string_view( host ),
                       std::string_view( " " ),
@@ -60,6 +62,12 @@ SessionFrame make_session_offer( const UdpEndpoint& endpoint, const Bootstrap& s
   frame.size_ += key.size();
   frame.bytes_[frame.size_++] = '\n';
   return frame;
+}
+SessionOfferDecoder::SessionOfferDecoder( std::string_view profile )
+  : profile_( profile == SESSION_PROFILE ? SESSION_PROFILE : TERMINAL_PROFILE )
+{
+  if ( profile != SESSION_PROFILE && profile != TERMINAL_PROFILE )
+    throw Error( "invalid application profile" );
 }
 void SessionOfferDecoder::clear() noexcept
 {
@@ -92,7 +100,7 @@ SessionOffer SessionOfferDecoder::finish()
     reject();
   try {
     std::string_view input( bytes_.data(), size_ - 1 );
-    for ( auto field : { PREFIX, SESSION_PROFILE, ROLES } ) {
+    for ( auto field : { PREFIX, profile_, ROLES } ) {
       if ( input.substr( 0, field.size() ) != field )
         reject();
       input.remove_prefix( field.size() );
