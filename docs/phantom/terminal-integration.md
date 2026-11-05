@@ -45,7 +45,9 @@ All daemon and PTY forks finish before session secrets are generated. The SSH-
 launched shell is owned while UDP confirmation is pending; unconfirmed startup
 expiry tears it down. A single SessionChannel owns crypto, packet counters,
 control/recovery timers and sockets. SspTransport handles reliable terminal state
-and input; no parallel reliable byte protocol is introduced.
+and input; no parallel reliable byte protocol is introduced. Terminal echo ACKs
+are registered only for nonempty UserStream changes, not for empty SSP ACK
+frames; otherwise those acknowledgements can generate an idle feedback loop.
 
 The PTY master is nonblocking and close-on-exec. Exec takes an absolute executable
 and argv, with no ENOEXEC shell fallback. The child resets inherited signal masks
@@ -76,7 +78,7 @@ uninterruptible kernel state; this is not a bounded whole-lifecycle guarantee.
 the actual detached server, and checks a computed shell result (not just command
 echo), pipe EOF, bidirectional terminal traffic, resize, raw-mode restoration,
 client SIGTERM, SSH-startup signal cancellation, abandoned-startup expiry,
-ordinary foreground/background job cleanup, and acknowledged
+ordinary foreground/background job cleanup, idle echo-ACK stability, and acknowledged
 shutdown. Unknown-host trust and both terminal/control profile mismatches fail.
 No real terminal contents or session keys are captured or logged.
 

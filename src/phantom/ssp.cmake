@@ -54,8 +54,12 @@ target_compile_options(phantom-mosh-terminal-server PRIVATE -Wall -Wextra -Wpeda
 add_executable(phantom-mosh-terminal terminal_client.cc)
 target_link_libraries(phantom-mosh-terminal PRIVATE phantom_ssp phantom_ssh_startup)
 target_compile_options(phantom-mosh-terminal PRIVATE -Wall -Wextra -Wpedantic -Werror)
+add_executable(phantom_terminal_idle_driver ../../tests/phantom/terminal_idle_driver.cc)
+target_link_libraries(phantom_terminal_idle_driver PRIVATE phantom_ssp phantom_ssh_startup)
+target_compile_options(phantom_terminal_idle_driver PRIVATE -Wall -Wextra -Wpedantic -Werror)
 add_test(NAME phantom-terminal-ssh
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/phantom/terminal_ssh_test.py
     $<TARGET_FILE:phantom-mosh-terminal-server> $<TARGET_FILE:phantom-mosh-terminal>
-    $<TARGET_FILE:phantom-mosh-server> $<TARGET_FILE:phantom-mosh-probe> ${PHANTOM_SSH_TEST_ARGUMENTS})
+    $<TARGET_FILE:phantom-mosh-server> $<TARGET_FILE:phantom-mosh-probe>
+    $<TARGET_FILE:phantom_terminal_idle_driver> ${PHANTOM_SSH_TEST_ARGUMENTS})
 set_tests_properties(phantom-terminal-ssh PROPERTIES TIMEOUT 60 SKIP_RETURN_CODE 77)

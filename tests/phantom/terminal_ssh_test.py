@@ -75,8 +75,8 @@ def finish_sessions(exclude, server, observed, expected_exit=0, timeout=5):
 
 
 def main():
-    server, probe, control_server, control_probe = (str(Path(p).resolve()) for p in sys.argv[1:5])
-    required = '--required' in sys.argv[5:]
+    server, probe, control_server, control_probe, idle_driver = (str(Path(p).resolve()) for p in sys.argv[1:6])
+    required = '--required' in sys.argv[6:]
     for invalid_port in ('0', '65536', '-1', 'bad', '12x'):
         invalid = subprocess.run([probe, '--udp-port', invalid_port, 'unused'], capture_output=True, timeout=3)
         check(invalid.returncode != 0 and b'invalid UDP port override' in invalid.stderr,
@@ -176,6 +176,18 @@ LogLevel ERROR
                 check(result.returncode == 0 and b'PHANTOM-PTY-42' in result.stdout and b'24 80' in result.stdout,
                       'real SSH-to-PTY terminal exchange failed (output suppressed)')
                 check(known.read_text() == pin, 'known-hosts file modified')
+                finish_sessions({daemon.pid}, server, observed)
+                # Empty SSP ACK frames must not feed terminal echo acknowledgements.
+                idle_args = [idle_driver, str(executable), str(config), 'phantom-session-fixture']
+                client = subprocess.Popen(idle_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                observed = set()
+                deadline = time.monotonic() + 10
+                while not observed and time.monotonic() < deadline and client.poll() is None:
+                    observed = {pid for pid in children() if is_server(pid, server)}
+                    time.sleep(0.01)
+                check(observed, 'idle terminal server not observed')
+                stdout, stderr = client.communicate(timeout=15)
+                check(client.returncode == 0, 'idle terminal ACK feedback regression: ' + stderr.decode(errors='replace'))
                 finish_sessions({daemon.pid}, server, observed)
                 # A configured server drain longer than the client-close wait
                 # must complete, rather than hitting the frontend's 5s deadline.
@@ -278,16 +290,23 @@ LogLevel ERROR
                     daemon.wait(timeout=3)
                 except subprocess.TimeoutExpired:
                     daemon.kill(); daemon.wait(timeout=3)
-                for pid in children():
-                    try:
-                        os.kill(pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                for pid in children():
-                    try:
-                        os.waitpid(pid, 0)
-                    except ChildProcessError:
-                        pass
+                cleanup_deadline = time.monotonic() + 5
+                while children() and time.monotonic() < cleanup_deadline:
+                    owned = children()
+                    for pid in owned:
+                        try:
+                            os.kill(pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                    for pid in owned:
+                        try:
+                            os.waitpid(pid, os.WNOHANG)
+                        except ChildProcessError:
+                            pass
+                    # Killing a supervisor can cause another generation to be
+                    # adopted; never block waiting for an unsignalled descendant.
+                    time.sleep(0.01)
+                check(not children(), 'fixture descendants survived emergency cleanup')
     return 0
 
 

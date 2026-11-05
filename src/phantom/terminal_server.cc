@@ -207,7 +207,6 @@ int daemon_main( int offer_fd, const std::string& host, RemotePolicy policy )
     frame.clear();
     ::close( offer.release() );
     std::string pending;
-    std::uint64_t last_input = 0;
     bool eof = false;
     bool shell_exited = false;
     std::uint64_t close_deadline = 0;
@@ -240,10 +239,10 @@ int daemon_main( int offer_fd, const std::string& host, RemotePolicy policy )
           if ( pending.size() > 65536 )
             throw Error( "terminal write budget exceeded" );
         }
-        if ( network.get_remote_state_num() != last_input ) {
-          last_input = network.get_remote_state_num();
-          terminal.register_input_frame( last_input, now );
-        }
+        // SSP ACK-only frames advance remote state numbers without carrying
+        // user input. Echo-acknowledging them creates an idle ACK feedback loop.
+        if ( !input.empty() )
+          terminal.register_input_frame( network.get_remote_state_num(), now );
         terminal.set_echo_ack( now );
         if ( !pending.empty() ) {
           const auto count = ::write( pty->fd(), pending.data(), pending.size() );
