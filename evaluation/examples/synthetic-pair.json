@@ -1,0 +1,58 @@
+[
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "stock-mosh",
+    "session_id": "stock-1",
+    "pair_id": "pair-1",
+    "build_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "binary_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "workload_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "network_profile": "loopback-no-impairment",
+    "acquisition_profile": "fixture-v1",
+    "observation_duration_ms": 1000,
+    "evidence_kind": "synthetic",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 100,
+        "udp_payload_bytes": 50,
+        "direction": 1
+      },
+      {
+        "time_ms": 500,
+        "udp_payload_bytes": 100,
+        "direction": -1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "phantom-draft-01",
+    "session_id": "phantom-1",
+    "pair_id": "pair-1",
+    "build_sha": "dddddddddddddddddddddddddddddddddddddddd",
+    "binary_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "workload_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "network_profile": "loopback-no-impairment",
+    "acquisition_profile": "fixture-v1",
+    "observation_duration_ms": 1000,
+    "evidence_kind": "synthetic",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 100,
+        "udp_payload_bytes": 50,
+        "direction": 1
+      },
+      {
+        "time_ms": 500,
+        "udp_payload_bytes": 100,
+        "direction": -1
+      }
+    ]
+  }
+]

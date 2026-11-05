@@ -34,6 +34,9 @@ set_tests_properties(phantom-independent-reference PROPERTIES TIMEOUT 15)
 add_test(NAME phantom-evaluation-guards
   COMMAND ${Python3_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR}/../../evaluation -p test_observer.py)
 set_tests_properties(phantom-evaluation-guards PROPERTIES TIMEOUT 15)
+add_test(NAME phantom-matched-comparison-guards
+  COMMAND ${Python3_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR}/../../evaluation -p test_compare.py)
+set_tests_properties(phantom-matched-comparison-guards PROPERTIES TIMEOUT 15)
 
 add_executable(phantom_startup_test ../../tests/phantom/startup_test.cc)
 target_link_libraries(phantom_startup_test PRIVATE phantom_record)
