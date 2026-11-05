@@ -77,6 +77,10 @@ def finish_sessions(exclude, server, observed, expected_exit=0, timeout=5):
 def main():
     server, probe, control_server, control_probe = (str(Path(p).resolve()) for p in sys.argv[1:5])
     required = '--required' in sys.argv[5:]
+    for invalid_port in ('0', '65536', '-1', 'bad', '12x'):
+        invalid = subprocess.run([probe, '--udp-port', invalid_port, 'unused'], capture_output=True, timeout=3)
+        check(invalid.returncode != 0 and b'invalid UDP port override' in invalid.stderr,
+              'invalid UDP port reached SSH startup')
     keygen = shutil.which('ssh-keygen')
     sshd = shutil.which('sshd') or next((str(p) for p in (Path('/usr/sbin/sshd'), Path('/sbin/sshd')) if p.is_file()), None)
     if not keygen or not sshd or not Path('/usr/bin/ssh').is_file():

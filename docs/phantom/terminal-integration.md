@@ -21,7 +21,8 @@ build/terminal/phantom-mosh-terminal \
 ```
 
 An optional `--ssh-config FILE` uses a trusted OpenSSH config. An explicit
-`--udp-host IP` overrides the advertised numeric address behind NAT; it does not
+`--udp-host IP` and/or `--udp-port PORT` override the advertised endpoint behind
+NAT or for an explicit controlled test relay; they do not
 carry UDP through an SSH proxy. Existing SSH host trust and noninteractive
 credentials are required; the client never enrolls unknown or changed host keys.
 No bootstrap secrets appear in arguments or environment variables.

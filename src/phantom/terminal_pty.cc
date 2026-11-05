@@ -84,7 +84,8 @@ TerminalPty::TerminalPty( const std::vector<std::string>& argv, unsigned short r
       const char error = 'E';
       // If fd remapping failed, the original error descriptor is still live.
       const int error_fd = remapped ? 3 : errors[1];
-      (void)::write( error_fd, &error, 1 );
+      const auto ignored = ::write( error_fd, &error, 1 );
+      (void)ignored;
       ::_exit( 127 );
     }
     ::close( slave );

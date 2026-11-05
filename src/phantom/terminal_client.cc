@@ -8,6 +8,7 @@
 #include "ssp_transport.h"
 #include <algorithm>
 #include <cerrno>
+#include <charconv>
 #include <clocale>
 #include <fcntl.h>
 #include <iostream>
@@ -34,7 +35,8 @@ void signal_event( int signal )
       const char byte = 'S';
       // The nonblocking pipe remains readable for the SSH supervisor until
       // cancellation unwinds. Repeated signals cannot block inside a handler.
-      (void)::write( fd, &byte, 1 );
+      const auto ignored = ::write( fd, &byte, 1 );
+      (void)ignored;
     }
   }
   errno = saved_errno;
@@ -124,8 +126,10 @@ public:
     // below does not depend on a writable stdout or a cooperating consumer.
     static constexpr char reset[]
       = "\033[?1l\033[0m\033[?25h\033[?1003l\033[?1002l\033[?1001l\033[?1000l\033[?1015l\033[?1006l\033[?1005l";
-    if ( output_flags_ >= 0 )
-      (void)::write( STDOUT_FILENO, reset, sizeof reset - 1 );
+    if ( output_flags_ >= 0 ) {
+      const auto ignored = ::write( STDOUT_FILENO, reset, sizeof reset - 1 );
+      (void)ignored;
+    }
     restore();
   }
   LocalTerminal( const LocalTerminal& ) = delete;
@@ -263,9 +267,10 @@ int main( int argc, char** argv )
     SshStartupOptions options;
     options.server_path = "phantom-mosh-terminal-server";
     std::string override_host;
+    std::uint16_t override_port = 0;
     for ( int i = 1; i < argc; ++i ) {
       const std::string arg( argv[i] );
-      if ( arg == "--server" || arg == "--ssh-config" || arg == "--udp-host" ) {
+      if ( arg == "--server" || arg == "--ssh-config" || arg == "--udp-host" || arg == "--udp-port" ) {
         if ( ++i == argc )
           throw Error( "missing terminal option value" );
         if ( arg == "--server" )
@@ -274,9 +279,16 @@ int main( int argc, char** argv )
           options.config_path = argv[i];
         if ( arg == "--udp-host" )
           override_host = argv[i];
+        if ( arg == "--udp-port" ) {
+          const std::string_view text( argv[i] );
+          const auto parsed = std::from_chars( text.data(), text.data() + text.size(), override_port );
+          if ( parsed.ec != std::errc {} || parsed.ptr != text.data() + text.size() || !override_port )
+            throw Error( "invalid UDP port override" );
+        }
       } else {
         if ( arg.empty() || arg[0] == '-' || !options.destination.empty() )
-          throw Error( "usage: phantom-mosh-terminal [--server PATH] [--ssh-config FILE] [--udp-host IP] HOST" );
+          throw Error( "usage: phantom-mosh-terminal [--server PATH] [--ssh-config FILE] [--udp-host IP] "
+                       "[--udp-port PORT] HOST" );
         options.destination = arg;
       }
     }
@@ -289,8 +301,8 @@ int main( int argc, char** argv )
     SignalLifetime signals;
     options.cancel_fd = signals.cancellation_fd();
     auto offer = start_terminal_over_ssh( options );
-    const auto peer
-      = UdpEndpoint::parse( override_host.empty() ? offer.server.host() : override_host, offer.server.port() );
+    const auto peer = UdpEndpoint::parse( override_host.empty() ? offer.server.host() : override_host,
+                                          override_port ? override_port : offer.server.port() );
     auto socket = SessionSocket::client_to( peer );
     auto channel
       = SessionChannel::client( std::move( socket ), peer, std::move( offer.secret ), session_time_ms() );
