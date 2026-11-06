@@ -1,7 +1,7 @@
 # Traffic-analysis evaluation
 
-This evaluation approach is informed by PHANTOM WEAVE research. It separates
-removal of explicit wire markers from statistical resistance to identification.
+This evaluation approach separates removal of explicit wire markers from
+statistical resistance to identification.
 No traffic-classification results or independent replication are available yet.
 
 The executable tools in `evaluation/` validate inputs, dataset partitions and

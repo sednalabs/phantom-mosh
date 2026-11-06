@@ -3,13 +3,14 @@
 The Linux `phantom-mosh-server` executable owns an encrypted UDP session after
 SSH exits. `phantom-mosh-probe` authenticates startup through OpenSSH, confirms
 UDP reachability and closes the session. Neither executable starts a shell or
-PTY, and neither is a replacement for the existing Mosh client. SSP remains
-unintegrated. Application data is exposed by the library API but is discarded
+PTY, and neither is a replacement for the existing Mosh client. The separate
+[terminal executables](terminal-integration.md) use the integrated [SSP adapter](ssp.md).
+Application data is exposed by the library API but is discarded
 by the control-only server executable, not acknowledged as terminal delivery.
 
 The server and diagnostic probe share the [bounded datagram channel](session-channel.md).
 It owns socket readiness, control retry deadlines and application-data batches,
-so subsequent SSP integration need not duplicate those event loops.
+which the SSP adapter also uses without duplicating socket ownership.
 
 ## Build and diagnostic use
 
@@ -75,14 +76,16 @@ HELLO messages and candidate replacement do not extend this absolute deadline.
 The standalone control-only executable defaults to a 60-second authenticated
 idle budget after confirmation, so an interrupted probe cannot leak a daemon
 indefinitely. The reusable `RemoteSession` API defaults to no idle expiry for
-future long-lived terminal sessions. `--startup-ms`, `--path-ms`, `--drain-ms`
+long-lived terminal sessions, as used by the experimental terminal server.
+`--startup-ms`, `--path-ms`, `--drain-ms`
 and `--idle-ms` are explicit server lifetime overrides; `--idle-ms 0` disables
 idle expiry and requires an owner to close the confirmed session later.
 
 Termination signals stop the owner and release its socket and keys. A failed
 SSH client cannot reliably kill a detached remote process, so the remote lease
-is necessary even with correct local child cleanup. Full terminal/process-tree
-ownership, user quotas and a durable service manager are not implemented here.
+is necessary even with correct local child cleanup. This control-only executable
+does not own a terminal. The separate terminal server owns its PTY and ordinary descendants; user quotas and a durable service
+manager remain outside both executables.
 
 ## Encrypted control protocol
 
@@ -90,8 +93,9 @@ Each record payload contains `kind[1] | path_token[16] | optional_data`.
 Kinds are HELLO=1, CHALLENGE=2, CONFIRM=3, READY=4, DATA=5, CLOSE=6 and CLOSED=7.
 Only DATA permits additional bytes. The entire payload is encrypted by the
 unchanged record layer. Total record-plus-session overhead is 49 bytes; at a
-1200-byte UDP payload budget, application data is limited to 1151 bytes. A
-future SSP/timestamp adapter must deduct its own overhead again.
+1200-byte UDP payload budget, application data is limited to 1151 bytes. The
+[SSP adapter](ssp.md#fragment-accounting) deducts its own timing and fragment
+overhead from this application budget.
 
 A fresh client sends HELLO with a random request token. The owner creates one
 bounded candidate path and a random 128-bit challenge for that source address.
@@ -119,7 +123,9 @@ server adapters retain the underlying ACK-gated updates.
 A newest CLOSE from the active source and token enters a fixed one-second drain
 period. CLOSED may be resent for fresh CLOSE retries, but retries never extend
 the drain period and DATA is no longer delivered. Expiry erases keys and ends the
-owner. There is no reliable terminal-exit protocol or restoration after reboot.
+owner. This control protocol does not carry terminal-exit status; the separate
+terminal draft-02 application carries that status in reliable SSP state. Neither
+layer supports restoration after reboot.
 
 ## Scheduling, tests and limits
 

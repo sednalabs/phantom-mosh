@@ -1,3 +1,7 @@
+> This is the inherited upstream Mosh README. Its commands, packages, features
+> and badge describe Mosh v2, not the experimental Phantom terminal. Start with
+> the [Phantom Mosh README](../README.md) for this fork's current status and builds.
+
 [![ci](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml/badge.svg)](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml)
 
 Mosh: the mobile shell

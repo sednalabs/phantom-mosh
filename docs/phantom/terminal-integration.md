@@ -1,7 +1,8 @@
 # Experimental SSH-to-PTY terminal
 
-The terminal slice was developed in PR #7 (Ops w18886), with real-clock
-recovery qualification in PR #8 and matched traffic measurements in PR #4.
+The terminal, recovery tests and matched traffic measurements are integrated
+on the default branch. Historical measurement reports pin their tested revisions;
+they are not measurements of every later checkout.
 
 The Linux SSP opt-in now builds `phantom-mosh-terminal` and
 `phantom-mosh-terminal-server`. This is an experimental usable terminal slice,
@@ -13,11 +14,13 @@ control-only. Installation remains off by default; an explicit CMake option inst
 
 Build the inherited libraries and enable SSP using the exact same checkout,
 as described in [ssp.md](ssp.md). The resulting binaries are in your CMake build
-directory. Place the terminal server binary on a Linux host you administer, then
-run (substitute your actual absolute remote binary path and SSH destination):
+directory. Build or place the matching terminal server binary on a Linux host you
+administer. It must match that host's architecture and shared-library versions.
+Run as your ordinary SSH account, not as a privileged service (substitute your
+actual absolute remote binary path and SSH destination):
 
 ```sh
-build/terminal/phantom-mosh-terminal \
+build/ssp/phantom-mosh-terminal \
   --server /absolute/path/phantom-mosh-terminal-server user@host
 ```
 
@@ -27,6 +30,19 @@ NAT or for an explicit controlled test relay; they do not
 carry UDP through an SSH proxy. Existing SSH host trust and noninteractive
 credentials are required; the client never enrolls unknown or changed host keys.
 No bootstrap secrets appear in arguments or environment variables.
+
+The server binds an OS-selected UDP port on its SSH server-local address. The
+client has no server port-range selection option; `--udp-port` changes only the
+client destination, not the server bind. Use a controlled network with reachable
+UDP or an explicitly arranged mapping. Opening the SSH TCP port alone is not
+enough, and upstream Mosh's usual UDP port range is not a Phantom guarantee.
+
+If startup fails, first verify ordinary SSH to the same destination with the
+same trusted config and noninteractive credentials. Do not weaken host-key
+checking. If SSH works but UDP confirmation times out, check the advertised
+address, routing and firewall policy. A profile mismatch requires matching
+terminal builds, not a downgrade. Missing `C.UTF-8`, unsupported process APIs
+or incompatible shared libraries require fixing the host prerequisites.
 
 The separate `phantom-mosh/terminal/draft-02` application profile is selected
 inside authenticated SSH startup and strictly checked in the address-bound
@@ -74,10 +90,10 @@ These describe metadata encoding, not a new cryptographic assurance claim.
 The default CMake build installs nothing. To opt in after building SSP:
 
 ```sh
-cmake -S src/phantom -B build/terminal -DPHANTOM_BUILD_SSP=ON \
+cmake -S src/phantom -B build/ssp -DPHANTOM_BUILD_SSP=ON \
   -DPHANTOM_MOSH_BUILD_DIR="$PWD" -DPHANTOM_INSTALL_TERMINAL=ON
-cmake --build build/terminal --parallel 2
-DESTDIR="$PWD/stage" cmake --install build/terminal --prefix /usr \
+cmake --build build/ssp --parallel 2
+DESTDIR="$PWD/stage" cmake --install build/ssp --prefix /usr \
   --component phantom-terminal
 ```
 
@@ -148,11 +164,10 @@ This remains userspace loopback coverage, not kernel NAT or WAN acceptance.
 
 Remaining work includes account/login-shell and locale selection, prediction and
 local escape controls, distribution packaging, broader interrupted/failed-session
-coverage, and real
-network validation. Established session state intentionally survives a network
-outage; a crashed server can look like an outage until the user cancels locally.
+coverage, and real-network validation. Established session state intentionally
+survives a network outage; a crashed server can look like an outage until the user cancels locally.
 
-The measurement lane (w18887, PR #4) preserved the draft-01 ACK-loop before/after
+The measurement reports preserve the draft-01 ACK-loop before/after
 pilot and a [separate integrated draft-02 collection](integrated-loopback-pilot.md).
 That collection pins the exact terminal/recovery revision and binary hashes;
 it is not a measurement of every later checkout. Visible traffic differences

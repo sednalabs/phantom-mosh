@@ -9,8 +9,10 @@ profile identifier. There is no official Mosh-v3 allocation or QUIC compatibilit
 This component accepts a role, a fresh 32-byte random bootstrap secret, a trusted
 monotonic millisecond clock and bounded local resource policy. The caller MUST
 already have authenticated the exact `phantom-mosh/v3/draft-01` selection and
-both endpoint roles through an authenticated channel. SSH remains the intended
-identity/bootstrap authority, but that integration is not implemented here.
+both endpoint roles through an authenticated channel. The separate
+[SSH supervisor](ssh-startup.md) implements that bootstrap authority. The
+address-bound session and terminal profiles select this unchanged record suite;
+their application-profile versions are not new record cipher versions.
 
 The text form is exactly 43 canonical unpadded standard-base64 characters.
 Whitespace, `=`, URL-safe substitutions and nonzero unused bits are rejected.
@@ -19,7 +21,7 @@ Callers MUST clear their own encoded/input copies and MUST NOT log secrets.
 Every new session requires fresh entropy. No process restart, cloned process or
 VM rollback may reuse the bootstrap and reset packet numbering.
 
-No UDP cipher negotiation or downgrade fallback exists. A future launcher must
+No UDP cipher negotiation or downgrade fallback exists. A launcher must
 fail closed when an explicitly selected profile is unavailable or mismatched.
 Choosing upstream v2 compatibility must be an explicit separate decision.
 
@@ -52,7 +54,7 @@ protected_packet_number[8] | encrypted(epoch[4] | ack_epoch[4] | payload) | tag[
 
 All integers are unsigned big-endian. `packet_number` is a session-wide,
 per-direction counter starting at zero. It does not reset on a key update.
-The maximum is `2^63-1`, preserving a future adapter's internal Mosh packet range.
+The maximum is `2^63-1`, preserving the internal Mosh packet range used by adapters.
 `epoch` and `ack_epoch` are 32-bit. `ack_epoch` means the highest peer epoch this
 receiver has successfully authenticated and accepted, not application delivery.
 
@@ -104,7 +106,8 @@ Local policy may reduce limits, not raise the fixed hard cap.
 
 There is no autonomous timer thread or automatic ACK packet generation in this
 library. The owner schedules sends and calls `tick`, and must arrange timely
-ACK-carrying traffic through the transport. A future SSP adapter owns that work.
+ACK-carrying traffic through the transport. The [SSP adapter](ssp.md) owns that
+work for the terminal; the standalone record library does not manufacture ACKs.
 
 ## Receiving, replay and bounded work
 

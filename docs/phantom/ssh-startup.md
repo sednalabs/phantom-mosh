@@ -1,8 +1,16 @@
 # SSH startup supervisor
 
-`start_over_ssh` executes OpenSSH and returns a validated, move-only
-`StartupOffer`. It is the client-side startup component, not a terminal launcher
-or the production server. The inherited Mosh executables remain unchanged.
+The Linux supervisor executes OpenSSH and returns a validated, move-only offer.
+It supplies three explicit entry points:
+
+- `start_over_ssh`: original record profile and port-only `StartupOffer`.
+- `start_session_over_ssh`: control-session profile and address-bound `SessionOffer`.
+- `start_terminal_over_ssh`: terminal draft-02 profile and address-bound offer,
+  with safely quoted shell/TERM options.
+
+The [control probe](remote-session.md) and [terminal client](terminal-integration.md)
+use the latter two entry points. The supervisor does not itself own the remote
+PTY; the terminal server does. Inherited Mosh executables remain unchanged.
 
 ## Authentication and command construction
 
@@ -12,11 +20,18 @@ is not found through `PATH`. An optional `config_path` selects a trusted OpenSSH
 configuration file. Local executable/configuration files, including configured
 proxy commands and host-key providers, are part of the trusted environment.
 
-The supervisor invokes OpenSSH without a local shell. The remote command is:
+The supervisor invokes OpenSSH without a local shell. For the original
+`start_over_ssh` entry point, the remote command is:
 
 ```text
 exec '<server_path>' '--startup-profile' 'phantom-mosh/v3/draft-01'
 ```
+
+The control-session entry point selects `--session-profile` with
+`phantom-mosh/session/draft-01`; the terminal entry point selects
+`--terminal-profile phantom-mosh/terminal/draft-02` plus explicit `--shell` and
+`--term` values. Both use the bounded `PHANTOM SESSION` address-bound codec.
+Application profile versions do not change the record cipher/key schedule.
 
 Each remote argument is independently shell-quoted, including embedded single
 quotes. Destinations are restricted to hostname, address and `user@host`/alias
@@ -32,9 +47,12 @@ There is no automatic downgrade or alternate authentication path.
 Command-line settings disable PTY allocation, agent/X11/port forwarding, local
 commands, connection multiplexing and backgrounding. This keeps the SSH child
 under the supervisor's ownership. Normal SSH configuration may still resolve
-aliases, select a user/port/key and configure a trusted proxy. The returned offer
-contains a port, not a new host: the future transport must connect to the
-SSH-authenticated endpoint, not blindly resolve a configuration alias as DNS.
+aliases, select a user/port/key and configure a trusted proxy. The original
+record offer contains only a port, so its caller must supply the authenticated
+server address. Current session and terminal offers include the numeric
+server-local address obtained from `SSH_CONNECTION`. A trusted local UDP endpoint
+override may be needed behind NAT. Do not resolve a configuration alias as DNS
+or assume an SSH proxy carries UDP; see [address binding](remote-session.md#address-bound-startup).
 
 ## Admission and lifetime
 
@@ -65,10 +83,11 @@ process group is not a sandbox for descendants that deliberately detach, and is
 not a remote-process cancellation guarantee. OS-level uninterruptible operations
 can delay cleanup despite the protocol deadline.
 
-A production remote server must independently expire startup sessions that never
-receive an authenticated UDP confirmation. That server lifecycle and terminal
-integration are still outstanding. The test responder has a three-second lease;
-it is not a production daemon or a secret-custody implementation.
+Remote owners must independently expire startups that never receive an
+authenticated UDP confirmation. The [control server](remote-session.md) and
+[terminal server](terminal-integration.md) implement that separate lease; local
+SSH cleanup alone cannot guarantee remote cleanup. The original record test
+responder has a three-second lease and remains a test fixture.
 
 ## Building and testing
 
@@ -95,8 +114,10 @@ quotes and shell punctuation tests actual remote-shell argument handling.
 Install `openssh-client` and `openssh-server` and set
 `PHANTOM_REQUIRE_SSH_TESTS=ON` to make missing integration prerequisites fatal.
 CI uses this setting. Developer builds without those tools report an explicit
-skip, not a passing SSH test. Cryptographic review, terminal convergence and
-statistical fingerprint resistance remain separate validation requirements.
+skip, not a passing SSH test. The separate `phantom-session-ssh`,
+`phantom-terminal-ssh` and `phantom-terminal-recovery` tests exercise the
+integrated owners and terminal. Their results do not replace independent
+cryptographic review or statistical traffic evaluation.
 
 References: [OpenSSH client](https://man.openbsd.org/ssh) and
 [OpenSSH configuration](https://man.openbsd.org/ssh_config).

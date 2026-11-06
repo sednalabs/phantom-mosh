@@ -4,6 +4,12 @@ The startup component provides a message codec and a POSIX descriptor reader for
 connecting the record layer to a launcher. It does not run SSH, authenticate a
 host or start a terminal. Existing Mosh executables are unchanged.
 
+This page describes the original **port-only record-component codec**. Current
+control and terminal executables use the distinct address-bound `PHANTOM SESSION`
+offers in [remote-session.md](remote-session.md#address-bound-startup), selected
+through the [SSH supervisor](ssh-startup.md). The terminal selects application
+profile `phantom-mosh/terminal/draft-02`; it does not use this port-only offer.
+
 ## Message format
 
 A server-to-client offer is exactly one ASCII line followed by end-of-stream:
@@ -68,7 +74,7 @@ Setting close-on-exec inside the reader cannot undo an earlier inheritance leak.
 
 This plaintext message is for an authenticated, confidential control channel,
 not a public UDP socket. A correct prefix and successful parsing are not proof
-of identity. The future launcher must retain SSH host-key authentication, request
+of identity. A launcher must retain SSH host-key authentication, request
 the exact profile, check successful SSH/remote startup completion, and use only
 that authenticated server's address with the returned port.
 

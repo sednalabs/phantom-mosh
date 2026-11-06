@@ -1,6 +1,7 @@
 # Real-clock terminal recovery qualification
 
-Ops: w18888. This lane combines terminal PR #7 at
+This report preserves the original draft-01 recovery qualification and the
+later draft-02 integration below. The initial qualification combines terminal PR #7 at
 `ebd798fd58cca6540a3c6da9869f7124e194ac7c` with PR #6's recovery fix at
 `9e04f4bf6ae4dbad4c47251539b0849c7770281f`, without changing either branch.
 It closes the gap between #6's logical-clock terminal-state test and #7's
@@ -48,7 +49,7 @@ do not establish sanitizer or hosted CI success.
 Reproduce after the same-checkout build described in [ssp.md](ssp.md):
 
 ```sh
-ctest --test-dir build/ssp -R phantom-terminal-recovery --output-on-failure -V
+(cd build/ssp && ctest -R phantom-terminal-recovery --output-on-failure -V)
 python3 tests/phantom/terminal_recovery_test.py \
   build/ssp/phantom-mosh-terminal-server build/ssp/phantom-mosh-terminal --required
 ```
@@ -61,17 +62,14 @@ background traffic or cross-address-family migration. #6 retains separate
 logical-clock IPv4/IPv6 coverage, including its logical 180-day outage. The
 real two-second blackout here is not evidence of a 180-day real outage.
 
-This executor has zero permitted/effective capabilities, and no authorized
-connected remote or owned WAN test endpoint was identified. No host firewall,
-route, namespace or other security-sensitive network setting was changed. Real
-kernel NAT/WAN work therefore remains unrun, not silently replaced by this relay.
-A later owned-router experiment needs scoped endpoints and approved isolated
-network administration, then source-port/conntrack evidence and the same computed
-terminal witnesses under real link outages.
+No kernel NAT or WAN experiment was run for this report, and no host firewall,
+route or namespace settings were changed. A later owned-router experiment needs
+controlled endpoints and isolated network administration, source-port/conntrack
+evidence and the same computed terminal witnesses under real link outages.
 
 ## Draft-02 integration
 
-The next integration combines #7 at
+The later draft-02 qualification combines #7 at
 `bb5c90713b75c45f7f3e244a2e7457592105e59b` with the same recovery fix. Both
 CMake test registrations were retained when resolving their append-only conflict.
 The final recovery command now exits with status 7, and the actual client must

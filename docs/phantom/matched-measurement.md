@@ -1,11 +1,13 @@
 # Matched traffic measurement protocol
 
-Status: the harness has synthetic regression tests and a separate
-[small real-terminal loopback pilot](loopback-pilot.md). The full campaign below
-has not been run. Neither this protocol nor that pilot establishes resistance
-to identification, activity inference, or cross-flow linkage. The pilot uses
-experimental terminal binaries from PR #7; these are not included in this
-evaluation branch. Do not substitute control-probe traffic for terminals.
+Status: the harness has synthetic regression tests, a historical
+[ACK-loop before/after pilot](loopback-pilot.md), and a separate
+[integrated draft-02 terminal pilot](integrated-loopback-pilot.md). The terminal
+is now included in the default branch as an explicit SSP build opt-in. Each
+pilot pins its actual source and binary hashes. The full campaign below has
+not been run, and none of these pilots establishes resistance to identification,
+activity inference or cross-flow linkage. Do not substitute control-probe traffic
+for terminals.
 
 ## Reproduce the available validation
 
@@ -39,8 +41,8 @@ The CMake test suite also runs these comparison guard tests.
    makes the pair ineligible, not evidence of quiet traffic.
 4. Have an independent check confirm remote command completion and screen
    convergence. Client-side prediction is not a remote success acknowledgement.
-   The terminal lane must supply the executable invocation and this check before
-   collecting a real terminal corpus. PR #7 supplies an experimental frontend;
+   Record the executable invocation and this check before collecting a real
+   terminal corpus. Build the [experimental frontend](terminal-integration.md);
    the pilot runner checks computed remote output, not local echo.
 
 ## Matched collection
