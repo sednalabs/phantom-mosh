@@ -68,3 +68,10 @@ thresholds and measurements unset until an experiment is specified and run.
 Independent challenge construction and replication are needed for stronger
 claims. Padding, traffic shaping and idle-scheduling changes should follow
 measured benefit rather than assumptions about how random traffic ought to look.
+
+## Reproducible matched summaries
+
+The [matched measurement protocol](matched-measurement.md) and
+`evaluation/compare.py` provide strict paired metadata summaries, pinned artifact
+provenance and synthetic regression tests. Actual terminal capture remains a
+separate prerequisite. These summaries are not classifier or privacy results.

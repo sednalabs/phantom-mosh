@@ -252,7 +252,10 @@ static void hard_limits_and_closure()
   CHECK( !clock.state().closed );
 }
 // Test-only raw keys construct valid-AEAD records with invalid protocol fields.
-static Bytes forged_protocol_record( std::uint64_t pn, std::uint32_t ack, std::uint32_t epoch = 0 )
+static Bytes forged_protocol_record( std::uint64_t pn,
+                                     std::uint32_t ack,
+                                     std::uint32_t epoch = 0,
+                                     std::uint32_t key_epoch = 0 )
 {
   Bytes root( 32 );
   for ( unsigned i = 0; i < 32; ++i )
@@ -265,6 +268,11 @@ static Bytes forged_protocol_record( std::uint64_t pn, std::uint32_t ack, std::u
     detail::expand( secret, reinterpret_cast<const unsigned char*>( label.data() ), label.size(), out, n );
   };
   derive( master.data(), "client to server", traffic.data(), 32 );
+  for ( std::uint32_t i = 0; i < key_epoch; ++i ) {
+    std::array<unsigned char, 32> next {};
+    derive( traffic.data(), "traffic update", next.data(), next.size() );
+    traffic = next;
+  }
   derive( traffic.data(), "traffic key", k.data(), 32 );
   derive( traffic.data(), "traffic iv", iv.data(), 12 );
   derive( traffic.data(), "header protection", hp.data(), 32 );
@@ -295,6 +303,62 @@ static void authenticated_invalid_fields_are_atomic()
   CHECK( !s.open( forged_protocol_record( MAX_PACKET_NUMBER + 1, 0 ), 0 ) );
   same_protocol_state( before, s.state() );
   CHECK( s.open( forged_protocol_record( 0, 0 ), 0 ) );
+}
+// These records use public, deterministic fixture keys, never live secrets.
+static void authenticated_epoch_boundaries()
+{
+  Session s( Role::server, key(), 0 );
+  CHECK( s.open( forged_protocol_record( 10, 0 ), 0 ) );
+  auto before = s.state();
+  // A valid next-epoch tag cannot move the packet-number high-water mark back.
+  CHECK( !s.open( forged_protocol_record( 9, 0, 1, 1 ), 0 ) );
+  same_protocol_state( before, s.state() );
+  // Nor can a valid record under an unadmitted epoch skip the ratchet.
+  CHECK( !s.open( forged_protocol_record( 30, 0, 2, 2 ), 0 ) );
+  same_protocol_state( before, s.state() );
+  CHECK( s.open( forged_protocol_record( 20, 0, 1, 1 ), 0 ) );
+  before = s.state();
+  // Retained old keys must not authorize a newer path/high-water mark.
+  CHECK( !s.open( forged_protocol_record( 21, 0 ), 0 ) );
+  same_protocol_state( before, s.state() );
+  auto old = s.open( forged_protocol_record( 19, 0 ), 0 );
+  CHECK( old && !old->newest && old->epoch == 0 );
+  auto current = s.open( forged_protocol_record( 18, 0, 1, 1 ), 0 );
+  CHECK( current && !current->newest && current->epoch == 1 );
+  // The replay window is global, not reset or separate at an epoch boundary.
+  CHECK( !s.open( forged_protocol_record( 19, 0, 1, 1 ), 0 ) );
+  CHECK( s.open( forged_protocol_record( 22, 0, 1, 1 ), 0 )->newest );
+}
+static void acknowledgement_replay_is_atomic()
+{
+  auto p = fast();
+  p.rekey_packets = 1;
+  Session s( Role::server, key(), 0, p );
+  CHECK( s.open( forged_protocol_record( 7, 0 ), 0 ) );
+  s.seal( {}, 0 );
+  s.seal( {}, 0 );
+  CHECK( s.state().send_epoch == 1 && s.state().peer_ack == 0 );
+  const auto before = s.state();
+  // A valid tag with a replayed number must not apply its changed ACK.
+  CHECK( !s.open( forged_protocol_record( 7, 1 ), 0 ) );
+  same_protocol_state( before, s.state() );
+  s.seal( {}, 0 );
+  CHECK( s.state().send_epoch == 1 );
+  CHECK( s.open( forged_protocol_record( 8, 1 ), 0 ) );
+  s.seal( {}, 0 );
+  CHECK( s.state().send_epoch == 2 );
+}
+static void replay_and_retirement_edges()
+{
+  Session s( Role::server, key(), 0 );
+  CHECK( s.open( forged_protocol_record( REPLAY_WINDOW, 0 ), 0 ) );
+  CHECK( s.open( forged_protocol_record( 1, 0 ), 0 ) );
+  CHECK( !s.open( forged_protocol_record( 0, 0 ), 0 ) );
+  CHECK( s.open( forged_protocol_record( REPLAY_WINDOW + 1, 0, 1, 1 ), 0 ) );
+  CHECK( s.open( forged_protocol_record( 3, 0 ), 29999 ) );
+  CHECK( !s.open( forged_protocol_record( 4, 0 ), 30000 ) );
+  CHECK( !s.state().previous_key_retained );
+  CHECK( s.open( forged_protocol_record( REPLAY_WINDOW + 2, 0, 1, 1 ), 30000 ) );
 }
 static void deterministic_network_schedule()
 {
@@ -386,6 +450,9 @@ int main( int argc, char** argv )
           { "simultaneous updates", simultaneous_updates },
           { "hard limits", hard_limits_and_closure },
           { "authenticated invalid fields", authenticated_invalid_fields_are_atomic },
+          { "authenticated epoch boundaries", authenticated_epoch_boundaries },
+          { "acknowledgement replay atomicity", acknowledgement_replay_is_atomic },
+          { "replay and retirement edges", replay_and_retirement_edges },
           { "seeded network schedule", deterministic_network_schedule } };
     for ( const auto& test : tests ) {
       test.second();

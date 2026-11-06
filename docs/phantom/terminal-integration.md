@@ -1,6 +1,7 @@
 # Experimental SSH-to-PTY terminal
 
-Ops work item: w18886. Branch: `feat/phantom-terminal-pty`, stacked on PR #3.
+The terminal slice was developed in PR #7 (Ops w18886), with real-clock
+recovery qualification in PR #8 and matched traffic measurements in PR #4.
 
 The Linux SSP opt-in now builds `phantom-mosh-terminal` and
 `phantom-mosh-terminal-server`. This is an experimental usable terminal slice,
@@ -139,8 +140,11 @@ No real terminal contents or session keys are captured or logged.
 The component suite also covers explicit exec rejection, closed-stdio permutations,
 SIGCHLD ownership rejection, UTF-8/PTy I/O and strict offer parsing. These tests are
 not an independent cryptographic review, a native Windows client, release packaging,
-or real-network statistical validation. The current terminal integration test is
-loopback; #6's NAT-rebinding/recovery lane is separate and not silently incorporated.
+or real-network statistical validation. Transparent source-port revalidation from
+PR #6 is included in the integrated terminal. The separate
+[`phantom-terminal-recovery` test](terminal-recovery.md) checks launched terminals
+through real-clock loopback remapping, impairment and a two-second blackout.
+This remains userspace loopback coverage, not kernel NAT or WAN acceptance.
 
 Remaining work includes account/login-shell and locale selection, prediction and
 local escape controls, distribution packaging, broader interrupted/failed-session
@@ -148,9 +152,11 @@ coverage, and real
 network validation. Established session state intentionally survives a network
 outage; a crashed server can look like an outage until the user cancels locally.
 
-The measurement lane (w18887, PR #4) already preserved the draft-01 ACK-loop
-before/after pilot. Its observations do not measure this draft-02 status envelope.
-A new matched collection must use the current exact client/server revision.
+The measurement lane (w18887, PR #4) preserved the draft-01 ACK-loop before/after
+pilot and a [separate integrated draft-02 collection](integrated-loopback-pilot.md).
+That collection pins the exact terminal/recovery revision and binary hashes;
+it is not a measurement of every later checkout. Visible traffic differences
+remain, and fingerprint resistance has not been established.
 Export observer-only `time_ms`, `udp_payload_bytes`, `direction` with matched fixed
 window/workload/network profile and capture-health metadata. Never publish real
 terminal contents, keys or endpoint identity. Fixtures are not measured resistance.

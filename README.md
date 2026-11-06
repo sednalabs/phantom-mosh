@@ -65,10 +65,14 @@ The inherited Autotools build is unchanged; its instructions are in the
 - [SSH startup supervisor](docs/phantom/ssh-startup.md): authentication, process ownership and integration tests.
 - [Remote-session control](docs/phantom/remote-session.md): lifetime, address binding and the diagnostic probe.
 - [Application datagram channel](docs/phantom/session-channel.md): event-loop integration, budgets and recovery.
+- [Experimental terminal](docs/phantom/terminal-integration.md): SSH/PTY setup, remote exit status and opt-in installation.
+- [Terminal recovery qualification](docs/phantom/terminal-recovery.md): real-clock loopback remapping and blackout tests.
 - [CI runner policy](docs/phantom/ci-runners.md): standard free public-repository runners.
 - [Security notes](docs/phantom/security.md): assumptions, limitations and review targets.
+- [Record protocol review](docs/phantom/protocol-review-2026-11-05.md): source review, regression coverage and outstanding audit gates.
 - [Integration roadmap](docs/phantom/integration.md): bootstrap, SSP and platform work.
 - [Traffic-analysis evaluation](docs/phantom/evaluation.md): observer inputs and experiment design.
+- [Integrated loopback pilot](docs/phantom/integrated-loopback-pilot.md): matched terminal measurements and their limits.
 
 [MoshWatch](https://github.com/sednalabs/moshwatch) remains a separate monitoring
 project, not a transport dependency. Evaluation draws on PHANTOM WEAVE research;

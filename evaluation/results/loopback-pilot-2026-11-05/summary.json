@@ -1,0 +1,286 @@
+{
+  "analysis_sha256": "98a87f690ccedb81055d126c1b94fe266a6d5e0dbc1da2fd3664d5e876c15aa3",
+  "builds": {
+    "phantom-draft-01": {
+      "binary_sha256": "d994db07da3b483d6b40d4eb35c8f9bf9b3c26397bd1ba0dd8b655a78271b6ff",
+      "build_sha": "ce7d4a1020c8167df66feecccf0b392a40359a0f"
+    },
+    "stock-mosh": {
+      "binary_sha256": "0da7971bd752525aea2dda8baacc769b128d0cc8a754fea7b912ae455868578e",
+      "build_sha": "decd9b705eb81626f694335b8d5940538beb06da"
+    }
+  },
+  "claim": "Descriptive paired metadata only. No identification, activity, linkage, or privacy result. Health and independence are collector attestations.",
+  "corpus_digest": "fe8deb817b222e5f0c9ea22e996db72a45dbce58e5a1e6ec64de0070ea10d0df",
+  "evidence_kind": "real-terminal-capture",
+  "mean_paired_difference": {
+    "direction_balance": -0.0015837307103178592,
+    "direction_runs": 150.0,
+    "duration_ms": 3791.188664499714,
+    "max_gap_ms": -2783.863563999754,
+    "max_payload_bytes": 44.0,
+    "mean_gap_ms": -841.3546667387523,
+    "mean_payload_bytes": 28.24597941634015,
+    "packet_count": 148.66666666666666,
+    "packets_per_second": 12.38888888888889,
+    "udp_payload_bytes_per_second": 1434.9027777777778,
+    "udp_payload_bytes_total": 17218.833333333332
+  },
+  "observer_sha256": "26459b5595262a6d9135f9a662e71263994ed53065bf3052f30cd052a9060ac4",
+  "pair_count": 6,
+  "pairs": [
+    {
+      "pair_id": "idle-1",
+      "phantom": {
+        "direction_balance": 0.009009009009009009,
+        "direction_runs": 111.0,
+        "duration_ms": 11921.184942000764,
+        "max_gap_ms": 207.0456789988384,
+        "max_payload_bytes": 125.0,
+        "mean_gap_ms": 108.37440856364331,
+        "mean_payload_bytes": 112.67567567567568,
+        "packet_count": 111.0,
+        "packets_per_second": 9.25,
+        "udp_payload_bytes_per_second": 1042.25,
+        "udp_payload_bytes_total": 12507
+      },
+      "phantom_minus_stock": {
+        "direction_balance": 0.009009009009009009,
+        "direction_runs": 103.0,
+        "duration_ms": 2810.343807999743,
+        "max_gap_ms": -2687.516278001567,
+        "max_payload_bytes": 50.0,
+        "mean_gap_ms": -1193.174324865074,
+        "mean_payload_bytes": 45.17567567567568,
+        "packet_count": 103.0,
+        "packets_per_second": 8.583333333333334,
+        "udp_payload_bytes_per_second": 997.25,
+        "udp_payload_bytes_total": 11967
+      },
+      "stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 8.0,
+        "duration_ms": 9110.84113400102,
+        "max_gap_ms": 2894.5619570004055,
+        "max_payload_bytes": 75.0,
+        "mean_gap_ms": 1301.5487334287172,
+        "mean_payload_bytes": 67.5,
+        "packet_count": 8.0,
+        "packets_per_second": 0.6666666666666666,
+        "udp_payload_bytes_per_second": 45.0,
+        "udp_payload_bytes_total": 540
+      }
+    },
+    {
+      "pair_id": "idle-2",
+      "phantom": {
+        "direction_balance": -0.008849557522123894,
+        "direction_runs": 112.0,
+        "duration_ms": 11894.748063999941,
+        "max_gap_ms": 219.06022500115796,
+        "max_payload_bytes": 125.0,
+        "mean_gap_ms": 106.2031077142852,
+        "mean_payload_bytes": 112.65486725663717,
+        "packet_count": 113.0,
+        "packets_per_second": 9.416666666666666,
+        "udp_payload_bytes_per_second": 1060.8333333333333,
+        "udp_payload_bytes_total": 12730
+      },
+      "phantom_minus_stock": {
+        "direction_balance": -0.008849557522123894,
+        "direction_runs": 104.0,
+        "duration_ms": 2791.7222999985825,
+        "max_gap_ms": -2690.321520998623,
+        "max_payload_bytes": 52.0,
+        "mean_gap_ms": -1194.229144285909,
+        "mean_payload_bytes": 43.279867256637175,
+        "packet_count": 105.0,
+        "packets_per_second": 8.75,
+        "udp_payload_bytes_per_second": 1014.5833333333333,
+        "udp_payload_bytes_total": 12175
+      },
+      "stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 8.0,
+        "duration_ms": 9103.025764001359,
+        "max_gap_ms": 2909.381745999781,
+        "max_payload_bytes": 73.0,
+        "mean_gap_ms": 1300.432252000194,
+        "mean_payload_bytes": 69.375,
+        "packet_count": 8.0,
+        "packets_per_second": 0.6666666666666666,
+        "udp_payload_bytes_per_second": 46.25,
+        "udp_payload_bytes_total": 555
+      }
+    },
+    {
+      "pair_id": "idle-3",
+      "phantom": {
+        "direction_balance": 0.0,
+        "direction_runs": 114.0,
+        "duration_ms": 11899.181136001062,
+        "max_gap_ms": 112.60754100112536,
+        "max_payload_bytes": 124.0,
+        "mean_gap_ms": 105.30248792921293,
+        "mean_payload_bytes": 113.23684210526316,
+        "packet_count": 114.0,
+        "packets_per_second": 9.5,
+        "udp_payload_bytes_per_second": 1075.75,
+        "udp_payload_bytes_total": 12909
+      },
+      "phantom_minus_stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 106.0,
+        "duration_ms": 2811.443769000107,
+        "max_gap_ms": -2799.369290998584,
+        "max_payload_bytes": 49.0,
+        "mean_gap_ms": -1192.9457073566377,
+        "mean_payload_bytes": 43.986842105263165,
+        "packet_count": 106.0,
+        "packets_per_second": 8.833333333333334,
+        "udp_payload_bytes_per_second": 1029.5833333333333,
+        "udp_payload_bytes_total": 12355
+      },
+      "stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 8.0,
+        "duration_ms": 9087.737367000955,
+        "max_gap_ms": 2911.9768319997092,
+        "max_payload_bytes": 75.0,
+        "mean_gap_ms": 1298.2481952858507,
+        "mean_payload_bytes": 69.25,
+        "packet_count": 8.0,
+        "packets_per_second": 0.6666666666666666,
+        "udp_payload_bytes_per_second": 46.166666666666664,
+        "udp_payload_bytes_total": 554
+      }
+    },
+    {
+      "pair_id": "typing-1",
+      "phantom": {
+        "direction_balance": 0.0,
+        "direction_runs": 204.0,
+        "duration_ms": 11886.994259999483,
+        "max_gap_ms": 111.04053199960617,
+        "max_payload_bytes": 171.0,
+        "mean_gap_ms": 57.98533785365601,
+        "mean_payload_bytes": 114.71844660194175,
+        "packet_count": 206.0,
+        "packets_per_second": 17.166666666666668,
+        "udp_payload_bytes_per_second": 1969.3333333333333,
+        "udp_payload_bytes_total": 23632
+      },
+      "phantom_minus_stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 195.0,
+        "duration_ms": 4772.523781999553,
+        "max_gap_ms": -2840.948096001739,
+        "max_payload_bytes": 32.0,
+        "mean_gap_ms": -489.28162199249243,
+        "mean_payload_bytes": 12.504160887656042,
+        "packet_count": 192.0,
+        "packets_per_second": 16.0,
+        "udp_payload_bytes_per_second": 1850.0833333333333,
+        "udp_payload_bytes_total": 22201
+      },
+      "stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 9.0,
+        "duration_ms": 7114.47047799993,
+        "max_gap_ms": 2951.988628001345,
+        "max_payload_bytes": 139.0,
+        "mean_gap_ms": 547.2669598461484,
+        "mean_payload_bytes": 102.21428571428571,
+        "packet_count": 14.0,
+        "packets_per_second": 1.1666666666666667,
+        "udp_payload_bytes_per_second": 119.25,
+        "udp_payload_bytes_total": 1431
+      }
+    },
+    {
+      "pair_id": "typing-2",
+      "phantom": {
+        "direction_balance": -0.004830917874396135,
+        "direction_runs": 206.0,
+        "duration_ms": 11886.24039000024,
+        "max_gap_ms": 109.74603800059413,
+        "max_payload_bytes": 177.0,
+        "mean_gap_ms": 57.700196067962324,
+        "mean_payload_bytes": 114.65217391304348,
+        "packet_count": 207.0,
+        "packets_per_second": 17.25,
+        "udp_payload_bytes_per_second": 1977.75,
+        "udp_payload_bytes_total": 23733
+      },
+      "phantom_minus_stock": {
+        "direction_balance": -0.004830917874396135,
+        "direction_runs": 197.0,
+        "duration_ms": 4773.652288999074,
+        "max_gap_ms": -2844.1878609992273,
+        "max_payload_bytes": 47.0,
+        "mean_gap_ms": -489.42196554751195,
+        "mean_payload_bytes": 12.652173913043484,
+        "packet_count": 193.0,
+        "packets_per_second": 16.083333333333332,
+        "udp_payload_bytes_per_second": 1858.75,
+        "udp_payload_bytes_total": 22305
+      },
+      "stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 9.0,
+        "duration_ms": 7112.588101001165,
+        "max_gap_ms": 2953.9338989998214,
+        "max_payload_bytes": 130.0,
+        "mean_gap_ms": 547.1221616154743,
+        "mean_payload_bytes": 102.0,
+        "packet_count": 14.0,
+        "packets_per_second": 1.1666666666666667,
+        "udp_payload_bytes_per_second": 119.0,
+        "udp_payload_bytes_total": 1428
+      }
+    },
+    {
+      "pair_id": "typing-3",
+      "phantom": {
+        "direction_balance": -0.004830917874396135,
+        "direction_runs": 204.0,
+        "duration_ms": 11896.152160999918,
+        "max_gap_ms": 110.69635800049582,
+        "max_payload_bytes": 171.0,
+        "mean_gap_ms": 57.748311461164654,
+        "mean_payload_bytes": 114.73429951690821,
+        "packet_count": 207.0,
+        "packets_per_second": 17.25,
+        "udp_payload_bytes_per_second": 1979.1666666666667,
+        "udp_payload_bytes_total": 23750
+      },
+      "phantom_minus_stock": {
+        "direction_balance": -0.004830917874396135,
+        "direction_runs": 195.0,
+        "duration_ms": 4787.446039001225,
+        "max_gap_ms": -2840.838336998786,
+        "max_payload_bytes": 34.0,
+        "mean_gap_ms": -489.0752363848887,
+        "mean_payload_bytes": 11.877156659765348,
+        "packet_count": 193.0,
+        "packets_per_second": 16.083333333333332,
+        "udp_payload_bytes_per_second": 1859.1666666666667,
+        "udp_payload_bytes_total": 22310
+      },
+      "stock": {
+        "direction_balance": 0.0,
+        "direction_runs": 9.0,
+        "duration_ms": 7108.706121998694,
+        "max_gap_ms": 2951.534694999282,
+        "max_payload_bytes": 137.0,
+        "mean_gap_ms": 546.8235478460533,
+        "mean_payload_bytes": 102.85714285714286,
+        "packet_count": 14.0,
+        "packets_per_second": 1.1666666666666667,
+        "udp_payload_bytes_per_second": 120.0,
+        "udp_payload_bytes_total": 1440
+      }
+    }
+  ],
+  "schema": "phantom-matched-summary-01"
+}
