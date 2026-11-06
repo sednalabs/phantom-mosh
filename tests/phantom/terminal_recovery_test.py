@@ -41,6 +41,8 @@ class Relay:
         self.error = None
         self.blackout = False
         self.impair = False
+        self.drop_server_controls = False
+        self.control_drops = 0
         self.pending = []
         self.last_client_packet = None
         self.received = self.forwarded = self.dropped = self.duplicates = 0
@@ -64,6 +66,14 @@ class Relay:
     def set_impairment(self, *, blackout=False, impair=False):
         with self.lock:
             self.blackout, self.impair = blackout, impair
+
+    def lose_close_acknowledgements(self):
+        # Arm only after a computed terminal witness on a fresh, unimpaired
+        # session. With no path change, subsequent server control is CLOSED.
+        # Control records are exactly 32 record bytes + 17 session bytes; SSP
+        # DATA additionally contains timing/fragment headers and cannot match.
+        with self.lock:
+            self.drop_server_controls = True
 
     def remap(self):
         with self.lock:
@@ -120,6 +130,10 @@ class Relay:
                         check(destination is not None, 'relay endpoint unavailable')
                         self.sequence[direction] += 1
                         serial = self.sequence[direction]
+                        if self.drop_server_controls and direction == -1 and len(data) == 49:
+                            self.control_drops += 1
+                            self.dropped += 1
+                            continue
                         if self.blackout or (self.impair and serial % 7 == 0):
                             self.dropped += 1
                             continue
@@ -334,6 +348,43 @@ LogLevel ERROR
                                       socket_drops=relay.socket_drops, computed_witnesses=True,
                                       stable_client_endpoint=True, raw_mode_restored=True, client_exit=7)))
                 relay = None
+                # A separate healthy session isolates loss of encrypted CLOSED
+                # replies from SSP completion. Remote exit 0 must not hide a
+                # channel close timeout, and the final screen must still drain.
+                target.unlink()
+                relay = Relay(target)
+                args = [client_path, '--server', str(wrapper), '--ssh-config', str(config),
+                        '--udp-host', '127.0.0.1', '--udp-port', str(relay.port), 'phantom-recovery-fixture']
+                client = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=subprocess.PIPE,
+                                          env=dict(os.environ, LANG='C.UTF-8', LC_ALL='C.UTF-8', TERM='xterm-256color'))
+                output.clear()
+                deadline = time.monotonic() + 12
+                while termios.tcgetattr(slave)[3] & termios.ICANON:
+                    check(client.poll() is None and time.monotonic() < deadline, 'close-loss raw-mode startup failed')
+                    drain(master, output)
+                os.write(master, b"printf 'CLOSE-READY:%s\\n' \"$((6*7))\"\n")
+                witness(master, output, client, relay, b'CLOSE-READY:42', timeout=12)
+                observed = {pid for pid in children() if is_server(pid, server)}
+                check(observed, 'close-loss terminal server not observed')
+                relay.lose_close_acknowledgements()
+                output.clear()
+                os.write(master, b"printf 'CLOSE-FINAL:%s\\n' \"$((7*7))\"; exit 0\n")
+                deadline = time.monotonic() + 15
+                while client.poll() is None and time.monotonic() < deadline:
+                    drain(master, output)
+                drain(master, output)
+                check(client.poll() == 1, 'lost close acknowledgement reported remote success')
+                stderr = client.stderr.read()
+                client.stderr.close()
+                check(b'terminal channel close was not acknowledged' in stderr,
+                      'close-loss session failed before channel completion')
+                check(b'CLOSE-FINAL:49' in output, 'close-loss final computed output was not drained')
+                check(termios.tcgetattr(slave) == original, 'close-loss failed to restore local termios')
+                check(relay.control_drops > 0, 'no encrypted close acknowledgements were dropped')
+                finish_sessions({daemon.pid}, server, observed)
+                relay.close()
+                relay = None
+                print('PASS lost channel close acknowledgements return failure after final output and termios restoration')
         finally:
             relay_error = None
             if client and client.poll() is None:

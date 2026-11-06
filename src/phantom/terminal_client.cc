@@ -224,8 +224,13 @@ int run( Client& transport )
         throw Error( "terminal session closed before final state acknowledgement" );
       // A prior frame might have drained this iteration. Render any newer final
       // state before returning, even if the peer already closed its channel.
-      if ( reset_queued && pending.empty() && drawn_number == transport.get_remote_state_num() )
-        return stopping ? 128 + stopping : transport.get_latest_remote_state().state.exit_code();
+      if ( reset_queued && pending.empty() && drawn_number == transport.get_remote_state_num() ) {
+        if ( stopping )
+          return 128 + stopping;
+        if ( transport.end_reason() != ChannelEnd::peer_closed )
+          throw Error( "terminal channel close was not acknowledged" );
+        return transport.get_latest_remote_state().state.exit_code();
+      }
     }
     if ( !eof && !closing && !finished && !transport.shutdown_in_progress()
          && transport.get_current_state().size() < INPUT_LIMIT ) {
