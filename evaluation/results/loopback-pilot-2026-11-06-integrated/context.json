@@ -1,0 +1,11 @@
+{
+  "schema": "integrated-pilot-context-01",
+  "terminal_profile": "phantom-mosh/terminal/draft-02",
+  "legacy_collector_implementation_label": "phantom-draft-01",
+  "measured_source": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+  "terminal_source": "bb5c90713b75c45f7f3e244a2e7457592105e59b",
+  "recovery_source": "9e04f4bf6ae4dbad4c47251539b0849c7770281f",
+  "source_pr": "https://github.com/sednalabs/phantom-mosh/pull/8",
+  "network_profile": "unchanged normal userspace IPv4 loopback relay; recovery impairments measured separately",
+  "claim": "descriptive metadata regression only; no fingerprint resistance or privacy result"
+}

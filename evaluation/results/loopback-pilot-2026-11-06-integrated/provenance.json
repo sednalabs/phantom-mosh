@@ -1,0 +1,30 @@
+{
+  "phantom_source": "https://github.com/sednalabs/phantom-mosh/pull/8",
+  "phantom_sha": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+  "phantom_tree": "c5fbe626747195ba11a4e376a3cb9e6920a1d824",
+  "phantom_build_type": "Release",
+  "compiler": "GCC 14.2.0",
+  "protobuf": "3.21.12",
+  "openssl": "3.5.7",
+  "phantom_local_checks": {
+    "ctest_passed": 23,
+    "ctest_failed": 0,
+    "inherited_make_check_passed": 5,
+    "inherited_make_check_skipped": 27,
+    "inherited_make_check_failed": 0
+  },
+  "stock_source": "https://github.com/mobile-shell/mosh",
+  "stock_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+  "stock_tracked_source_clean": true,
+  "stock_build": "reused independently built historical binaries; both SHA-256 values match historical manifest",
+  "stock_full_make_check": "not rerun; six functional terminal witnesses in this collection",
+  "raw_input_file_sha256": "1aaec5c8b89a9106fd04c5158d3311a8e2e8695228a1dc9c8bffedcc20e57d50",
+  "files_sha256": {
+    "manifest.json": "0af36e11ff2d71788fe377ae3301cc7adc1acdc7c7199cbb6e96e0bbc4afce83",
+    "ledger.json": "bd3eb0112e8fd34530461b1b570b4c237dfa6bd4578852832f27b805bfce8deb",
+    "summary.json": "bc9260bcae444eeea3f33f4c308cd738e99992e6876bcd49c0860dd4b63daa29",
+    "context.json": "4a287efa55044c606202ebc54ffb6586953ef5ea5e88155259ad8dbad71a0192"
+  },
+  "collection": "12 primary sessions; all passed; same unchanged collector and workload; no discarded sessions",
+  "limits": "descriptive historical regression, not blind holdout or privacy acceptance"
+}

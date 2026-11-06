@@ -31,6 +31,7 @@
 */
 
 #include <cassert>
+#include <stdexcept>
 
 #include "compressor.h"
 #include "src/crypto/byteorder.h"
@@ -155,6 +156,9 @@ bool Fragment::operator==( const Fragment& x ) const
 
 std::vector<Fragment> Fragmenter::make_fragments( const Instruction& inst, size_t MTU )
 {
+  if ( MTU <= Fragment::frag_header_len ) {
+    throw std::length_error( "SSP fragment budget cannot hold fragment contents" );
+  }
   MTU -= Fragment::frag_header_len;
   if ( ( inst.old_num() != last_instruction.old_num() ) || ( inst.new_num() != last_instruction.new_num() )
        || ( inst.ack_num() != last_instruction.ack_num() )

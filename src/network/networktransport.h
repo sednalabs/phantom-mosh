@@ -37,6 +37,7 @@
 #include <ctime>
 #include <list>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/network/network.h"
@@ -44,15 +45,19 @@
 #include "transportfragment.h"
 
 namespace Network {
-template<class MyState, class RemoteState>
+/* Explicit opt-in construction of a non-stock connection backend. */
+struct ConnectionInit
+{};
+
+template<class MyState, class RemoteState, class ConnectionType = Connection>
 class Transport
 {
 private:
   /* the underlying, encrypted network connection */
-  Connection connection;
+  ConnectionType connection;
 
   /* sender side */
-  TransportSender<MyState> sender;
+  TransportSender<MyState, ConnectionType> sender;
 
   /* helper methods for recv() */
   void process_throwaway_until( uint64_t throwaway_num );
@@ -74,6 +79,13 @@ public:
              const char* key_str,
              const char* ip,
              const char* port );
+
+  template<class... Args>
+  Transport( MyState& initial_state, RemoteState& initial_remote, ConnectionInit, Args&&... args );
+
+  /* The specialized owner drives backend I/O separately from SSP scheduling. */
+  ConnectionType& get_connection( void ) { return connection; }
+  const ConnectionType& get_connection( void ) const { return connection; }
 
   /* Send data or an ack if necessary. */
   void tick( void ) { sender.tick(); }

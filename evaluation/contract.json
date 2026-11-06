@@ -1,0 +1,15 @@
+{
+  "schema": "phantom-mosh-evaluation-draft-01",
+  "status": "not_measured",
+  "candidate_order": ["stock-mosh", "phantom-draft-01"],
+  "optional_comparators": ["clear-header-baseline"],
+  "observer_fields": ["time_ms", "udp_payload_bytes", "direction"],
+  "evaluator_only_fields": ["session", "domain", "workload", "collection", "label", "observation_health", "session_health"],
+  "outcomes": ["protocol_identification", "activity_characterization", "cross_flow_linkage"],
+  "holdout_units": ["whole_session", "domain", "workload", "collection"],
+  "required_manifest_bindings": ["build_sha", "detector_sha", "corpus_digest", "observer_capabilities", "observation_duration", "split_digest", "thresholds", "sealed_before_test"],
+  "acceptance_thresholds": null,
+  "measurements": null,
+  "independent_review": "not_performed",
+  "independent_replication": "not_performed"
+}

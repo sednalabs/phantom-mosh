@@ -1,0 +1,32 @@
+{
+  "schema": "terminal-recovery-01",
+  "terminal_source": "bb5c90713b75c45f7f3e244a2e7457592105e59b",
+  "recovery_source": "9e04f4bf6ae4dbad4c47251539b0849c7770281f",
+  "integration_parent": "cc79a935059569bb1200d46e464daa1cc901de4c",
+  "terminal_profile": "phantom-mosh/terminal/draft-02",
+  "sha256": {
+    "tests/phantom/terminal_recovery_test.py": "1d72053b0d9549fe796fb70ccba193e6af76ba230e47b99fb7863e239639ec3d",
+    "build/ssp/phantom-mosh-terminal": "eaa263d0afaa0edd4b16a20b7e2338e8afa7b90417f7cb748c5a07332112a65c",
+    "build/ssp/phantom-mosh-terminal-server": "4ff32ea01d904d594e94a2f5b832e38e893fbdd899ab24a4c13d3dac5a39d7b0"
+  },
+  "runs": {
+    "run-1.json": "d96844d10d326a32cf964991394093b79ed5c3059b21440f2bd96f09a454ff12",
+    "run-2.json": "5ea3dfbed914da5c67c1dd039bde9b3195f8de9bcf63a5c115733d731e0eee09",
+    "run-3.json": "cd5fc97a6542ddd1d94bfb27d32dd3986ce872b87ae2ad38e1af12d6bd483b16"
+  },
+  "ctest": {
+    "passed": 23,
+    "failed": 0
+  },
+  "inherited_make_check": {
+    "passed": 5,
+    "skipped": 27,
+    "failed": 0
+  },
+  "limits": [
+    "userspace IPv4 loopback relay",
+    "not kernel NAT or WAN",
+    "no fingerprint/privacy claim",
+    "local release build; hosted CI separate"
+  ]
+}
