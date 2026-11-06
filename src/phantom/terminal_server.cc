@@ -2,10 +2,11 @@
 // Additional permission to link with OpenSSL: see COPYING.phantom.
 // Experimental SSH-bootstrapped SSP terminal. See terminal-integration.md.
 #include "session_offer.h"
-#include "src/statesync/completeterminal.h"
 #include "src/statesync/user.h"
 #include "ssp_transport.h"
+#include "terminal_options.h"
 #include "terminal_pty.h"
+#include "terminal_state.h"
 #include <cerrno>
 #include <charconv>
 #include <clocale>
@@ -182,23 +183,27 @@ public:
     }
   }
 };
-int daemon_main( int offer_fd, const std::string& host, RemotePolicy policy )
+int daemon_main( int offer_fd,
+                 const std::string& host,
+                 RemotePolicy policy,
+                 const TerminalOptions& terminal_options )
 {
   try {
     Fd offer( offer_fd );
     // The shell is created in the authenticated SSH-launched daemon, before
     // any session secret exists. Unconfirmed channel expiry destroys this PTY.
-    if ( !std::setlocale( LC_ALL, "C.UTF-8" ) || ::setenv( "TERM", "xterm-256color", 1 ) )
+    if ( !std::setlocale( LC_ALL, "C.UTF-8" ) || ::setenv( "TERM", terminal_options.term.c_str(), 1 ) )
       throw Error( "terminal locale setup failed" );
     Descendants descendants;
-    auto pty = std::make_unique<TerminalPty>( std::vector<std::string> { "/bin/sh", "-i" }, 24, 80 );
+    auto pty = std::make_unique<TerminalPty>(
+      std::vector<std::string> { terminal_options.shell, "-i" }, 24, 80, 5000, &stopping );
     auto socket = SessionSocket::bind( host );
     auto secret = Bootstrap::random();
     auto frame = make_session_offer( socket.local(), secret, TERMINAL_PROFILE );
     const auto started = session_time_ms();
-    Terminal::Complete screen( 80, 24 );
+    TerminalState screen( 80, 24 );
     Network::UserStream initial_input;
-    SspTransport<Terminal::Complete, Network::UserStream> network(
+    SspTransport<TerminalState, Network::UserStream> network(
       screen,
       initial_input,
       SessionChannel::server( std::move( socket ), std::move( secret ), started, policy ),
@@ -209,11 +214,11 @@ int daemon_main( int offer_fd, const std::string& host, RemotePolicy policy )
     std::string pending;
     bool eof = false;
     bool shell_exited = false;
+    int shell_status = 0;
     std::uint64_t close_deadline = 0;
     while ( network.state() != ChannelState::closed ) {
       const auto now = session_time_ms();
       if ( !shell_exited ) {
-        int shell_status;
         shell_exited = pty->exited( shell_status );
         if ( shell_exited && !descendants.drain() )
           throw Error( "terminal descendants did not exit" );
@@ -264,8 +269,12 @@ int daemon_main( int offer_fd, const std::string& host, RemotePolicy policy )
             throw Error( "terminal output failed" );
           }
         }
-        if ( eof || stopping )
+        if ( eof && shell_exited ) {
+          terminal.set_wait_status( shell_status );
           network.start_shutdown();
+        } else if ( stopping ) {
+          network.start_shutdown();
+        }
       }
       if ( network.shutdown_ack_timed_out() && !network.shutdown_acknowledged() )
         throw Error( "terminal shutdown acknowledgement timed out" );
@@ -286,14 +295,18 @@ int daemon_main( int offer_fd, const std::string& host, RemotePolicy policy )
     }
     const bool acknowledged = network.end_reason() == ChannelEnd::peer_closed;
     network.stop();
+    const bool leader_cleaned = pty->terminate();
     pty.reset();
-    const bool cleaned = descendants.drain();
+    const bool cleaned = descendants.drain() && leader_cleaned;
     return !acknowledged ? 2 : ( cleaned ? 0 : 3 );
   } catch ( ... ) {
     return 1;
   } // Never write secret-bearing diagnostics from the daemon.
 }
-void detach_child( int pipe_fd, const std::string& host, RemotePolicy policy )
+void detach_child( int pipe_fd,
+                   const std::string& host,
+                   RemotePolicy policy,
+                   const TerminalOptions& terminal_options )
 {
   if ( ::setsid() < 0 )
     ::_exit( 1 );
@@ -324,10 +337,10 @@ void detach_child( int pipe_fd, const std::string& host, RemotePolicy policy )
     if ( ::sigaction( sig, &action, nullptr ) != 0 )
       ::_exit( 1 );
   // Returning from daemon_main destroys secret-bearing owners before _exit.
-  const int status = daemon_main( 3, host, policy );
+  const int status = daemon_main( 3, host, policy, terminal_options );
   ::_exit( status );
 }
-void launch( const std::string& host, RemotePolicy policy )
+void launch( const std::string& host, RemotePolicy policy, const TerminalOptions& terminal_options )
 {
   struct stat channel
   {};
@@ -343,7 +356,7 @@ void launch( const std::string& host, RemotePolicy policy )
     throw Error( "session process creation failed" );
   if ( child == 0 ) {
     ::close( read_end.release() );
-    detach_child( write_end.release(), host, policy );
+    detach_child( write_end.release(), host, policy, terminal_options );
     ::_exit( 1 );
   }
   ::close( write_end.release() );
@@ -391,14 +404,23 @@ int main( int argc, char** argv )
   try {
     if ( argc < 3 || std::string_view( argv[1] ) != "--terminal-profile"
          || std::string_view( argv[2] ) != TERMINAL_PROFILE )
-      throw Error( "usage: phantom-mosh-terminal-server --terminal-profile phantom-mosh/terminal/draft-01" );
+      throw Error( "usage: phantom-mosh-terminal-server --terminal-profile phantom-mosh/terminal/draft-02" );
     RemotePolicy policy;
+    TerminalOptions terminal_options;
     // Established terminals retain state during long disconnections.
     policy.idle_ms = 0;
     for ( int i = 3; i < argc; i += 2 ) {
       if ( i + 1 == argc )
         throw Error( "missing session lifetime option" );
       const std::string_view option( argv[i] );
+      if ( option == "--shell" ) {
+        terminal_options.shell = argv[i + 1];
+        continue;
+      }
+      if ( option == "--term" ) {
+        terminal_options.term = argv[i + 1];
+        continue;
+      }
       const auto value = number( argv[i + 1] );
       if ( option == "--startup-ms" )
         policy.startup_ms = value;
@@ -415,7 +437,8 @@ int main( int argc, char** argv )
     if ( !policy.startup_ms || policy.startup_ms > 120000 || !policy.path_ms || policy.path_ms > 120000
          || !policy.drain_ms || policy.drain_ms > 10000 )
       throw Error( "invalid session lifetime policy" );
-    launch( ssh_local_host(), policy );
+    terminal_options.validate();
+    launch( ssh_local_host(), policy, terminal_options );
     return 0;
   } catch ( const std::exception& e ) {
     std::cerr << e.what() << '\n';

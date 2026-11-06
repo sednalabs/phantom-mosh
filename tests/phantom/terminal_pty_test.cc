@@ -10,6 +10,27 @@
 #include <sys/wait.h>
 #include <unistd.h>
 using phantom::TerminalPty;
+static bool stall_exec = false;
+static pid_t delayed_reap = -1;
+static volatile sig_atomic_t cancelled = 0;
+extern "C" int __real_execv( const char*, char* const[] );
+extern "C" int __wrap_execv( const char* path, char* const args[] )
+{
+  while ( stall_exec )
+    ::pause();
+  return __real_execv( path, args );
+}
+extern "C" pid_t __real_waitpid( pid_t, int*, int );
+extern "C" pid_t __wrap_waitpid( pid_t pid, int* status, int flags )
+{
+  if ( pid == delayed_reap && ( flags & WNOHANG ) )
+    return 0; // deterministic unavailable reap, not a real uninterruptible task
+  return __real_waitpid( pid, status, flags );
+}
+void cancel_startup( int )
+{
+  cancelled = 1;
+}
 void require( bool value, const char* message )
 {
   if ( !value )
@@ -130,6 +151,47 @@ int main()
       owned = cleanup.pid();
     }
     require( ::waitpid( owned, nullptr, WNOHANG ) == -1 && errno == ECHILD, "destructor reaps child" );
+    // Hold the child before exec/close-on-exec, requiring a bounded handshake.
+    stall_exec = true;
+    auto began = std::chrono::steady_clock::now();
+    failed = false;
+    try {
+      TerminalPty stalled( { "/bin/true" }, 24, 80, 50 );
+    } catch ( const std::runtime_error& ) {
+      failed = true;
+    }
+    require( failed && std::chrono::steady_clock::now() - began < std::chrono::seconds( 2 ),
+             "stalled exec must time out and clean up" );
+    struct sigaction alarm_action
+    {
+    }, previous_alarm {};
+    alarm_action.sa_handler = cancel_startup;
+    ::sigemptyset( &alarm_action.sa_mask );
+    require( ::sigaction( SIGALRM, &alarm_action, &previous_alarm ) == 0, "install cancellation signal" );
+    ::ualarm( 50000, 0 );
+    began = std::chrono::steady_clock::now();
+    failed = false;
+    try {
+      TerminalPty stalled( { "/bin/true" }, 24, 80, 5000, &cancelled );
+    } catch ( const std::runtime_error& ) {
+      failed = true;
+    }
+    ::ualarm( 0, 0 );
+    require( ::sigaction( SIGALRM, &previous_alarm, nullptr ) == 0, "restore cancellation signal" );
+    require( failed && cancelled && std::chrono::steady_clock::now() - began < std::chrono::seconds( 2 ),
+             "stalled exec must observe cancellation" );
+    stall_exec = false;
+    {
+      TerminalPty cleanup( { "/bin/sh", "-c", "sleep 60" }, 24, 80 );
+      delayed_reap = cleanup.pid();
+      began = std::chrono::steady_clock::now();
+      require( !cleanup.terminate(), "unavailable reap must report incomplete cleanup" );
+      require( std::chrono::steady_clock::now() - began < std::chrono::seconds( 2 ), "bounded reap deadline" );
+      require( !cleanup.terminate(), "incomplete cleanup remains incomplete without a second wait" );
+      const auto child = delayed_reap;
+      delayed_reap = -1;
+      require( ::waitpid( child, nullptr, 0 ) == child, "caller can reap relinquished child" );
+    }
     std::cout << "terminal PTY tests passed\n";
     return 0;
   } catch ( const std::exception& error ) {

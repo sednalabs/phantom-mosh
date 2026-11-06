@@ -147,8 +147,10 @@ void cancelled( int fd )
     throw Error( "SSH startup cancelled" );
 }
 template<class Decoder>
-auto start_selected( const SshStartupOptions& options, std::string_view flag, std::string_view profile )
-  -> decltype( std::declval<Decoder&>().finish() )
+auto start_selected( const SshStartupOptions& options,
+                     std::string_view flag,
+                     std::string_view profile,
+                     const std::string& terminal_arguments = {} ) -> decltype( std::declval<Decoder&>().finish() )
 {
   validate( options );
   const auto deadline = std::chrono::steady_clock::now() + options.timeout;
@@ -179,7 +181,7 @@ auto start_selected( const SshStartupOptions& options, std::string_view flag, st
   args.emplace_back( "--" );
   args.push_back( options.destination );
   args.push_back( "exec " + quote( options.server_path ) + " " + quote( std::string( flag ) ) + " "
-                  + quote( std::string( profile ) ) );
+                  + quote( std::string( profile ) ) + terminal_arguments );
   std::vector<char*> argv;
   for ( auto& arg : args )
     argv.push_back( arg.data() );
@@ -267,8 +269,13 @@ SessionOffer start_session_over_ssh( const SshStartupOptions& options )
 {
   return start_selected<SessionOfferDecoder>( options, "--session-profile", SESSION_PROFILE );
 }
-SessionOffer start_terminal_over_ssh( const SshStartupOptions& options )
+SessionOffer start_terminal_over_ssh( const SshStartupOptions& options, const TerminalOptions& terminal )
 {
-  return start_selected<TerminalOfferDecoder>( options, "--terminal-profile", TERMINAL_PROFILE );
+  terminal.validate();
+  return start_selected<TerminalOfferDecoder>( options,
+                                               "--terminal-profile",
+                                               TERMINAL_PROFILE,
+                                               " --shell " + quote( terminal.shell ) + " --term "
+                                                 + quote( terminal.term ) );
 }
 } // namespace phantom

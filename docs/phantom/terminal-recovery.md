@@ -69,8 +69,23 @@ A later owned-router experiment needs scoped endpoints and approved isolated
 network administration, then source-port/conntrack evidence and the same computed
 terminal witnesses under real link outages.
 
-The terminal-only draft-02/exit-status work proceeds separately. This lane still
-uses #7's draft-01 protocol. Any combined revision requires rebuilding and
-rerunning this test and the matched traffic collector at that exact revision.
+## Draft-02 integration
+
+The next integration combines #7 at
+`bb5c90713b75c45f7f3e244a2e7457592105e59b` with the same recovery fix. Both
+CMake test registrations were retained when resolving their append-only conflict.
+The final recovery command now exits with status 7, and the actual client must
+return 7 after all computed witnesses and both remaps. This checks reliable
+authenticated exit metadata through recovery, not just a successful disconnect.
+
+All 23 component/SSP/integration CTests pass after the combined rebuild; inherited
+`make check` remains 5 passed, 27 skipped, 0 failed. Three draft-02 repeats and
+new binary/test hashes are retained in
+`evaluation/results/terminal-recovery-2026-11-06-draft02/`. The earlier directory
+remains historical draft-01 evidence with its original hashes. Sanitizer results
+for the terminal branch alone do not establish sanitizer success for this
+combination. Hosted checks are separate, exact-head evidence. The matched traffic
+collector must use these combined binaries and their published source revision.
+
 Nothing here establishes fingerprint resistance, privacy equivalence, independent
 cryptographic assurance, production readiness, or permission to merge/deploy.

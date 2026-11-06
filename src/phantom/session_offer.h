@@ -6,7 +6,7 @@
 
 namespace phantom {
 constexpr std::size_t SESSION_OFFER_MAX = 160;
-constexpr std::string_view TERMINAL_PROFILE = "phantom-mosh/terminal/draft-01";
+constexpr std::string_view TERMINAL_PROFILE = "phantom-mosh/terminal/draft-02";
 struct SessionOffer
 {
   UdpEndpoint server;

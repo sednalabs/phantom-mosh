@@ -5,6 +5,7 @@
 
 #include "session_offer.h"
 #include "startup.h"
+#include "terminal_options.h"
 #include <chrono>
 #include <string>
 
@@ -40,6 +41,6 @@ StartupOffer start_over_ssh( const SshStartupOptions& options );
 // behind NAT; a proxy configuration does not implicitly carry the UDP path.
 SessionOffer start_session_over_ssh( const SshStartupOptions& options );
 // Explicit terminal application selection; never accepts control-only offers.
-SessionOffer start_terminal_over_ssh( const SshStartupOptions& options );
+SessionOffer start_terminal_over_ssh( const SshStartupOptions& options, const TerminalOptions& terminal = {} );
 } // namespace phantom
 #endif

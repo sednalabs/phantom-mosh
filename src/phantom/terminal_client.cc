@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Additional permission to link with OpenSSL: see COPYING.phantom.
 // Experimental terminal frontend; deliberately no local prediction.
-#include "src/statesync/completeterminal.h"
 #include "src/statesync/user.h"
 #include "src/terminal/terminaldisplay.h"
 #include "ssh_startup.h"
 #include "ssp_transport.h"
+#include "terminal_state.h"
 #include <algorithm>
 #include <cerrno>
 #include <charconv>
@@ -29,7 +29,8 @@ void signal_event( int signal )
   if ( signal == SIGWINCH ) {
     resized = 1;
   } else {
-    stopping = 1;
+    if ( !stopping )
+      stopping = signal;
     const int fd = static_cast<int>( cancellation_writer );
     if ( fd >= 0 ) {
       const char byte = 'S';
@@ -157,12 +158,12 @@ Parser::Resize window_size()
   return Parser::Resize( std::min( 300, static_cast<int>( size.ws_col ) ),
                          std::min( 100, static_cast<int>( size.ws_row ) ) );
 }
-using Client = SspTransport<Network::UserStream, Terminal::Complete>;
-void run( Client& transport )
+using Client = SspTransport<Network::UserStream, TerminalState>;
+int run( Client& transport )
 {
   LocalTerminal local;
   Terminal::Display display( false );
-  Terminal::Complete drawn( 80, 24 );
+  TerminalState drawn( 80, 24 );
   std::string pending = display.open();
   std::size_t offset = 0;
   bool initialized = false, eof = false, closing = false, reset_queued = false;
@@ -224,7 +225,7 @@ void run( Client& transport )
       // A prior frame might have drained this iteration. Render any newer final
       // state before returning, even if the peer already closed its channel.
       if ( reset_queued && pending.empty() && drawn_number == transport.get_remote_state_num() )
-        return;
+        return stopping ? 128 + stopping : transport.get_latest_remote_state().state.exit_code();
     }
     if ( !eof && !closing && !finished && !transport.shutdown_in_progress()
          && transport.get_current_state().size() < INPUT_LIMIT ) {
@@ -265,14 +266,20 @@ int main( int argc, char** argv )
     if ( !std::setlocale( LC_ALL, "C.UTF-8" ) )
       throw Error( "C.UTF-8 locale required" );
     SshStartupOptions options;
+    TerminalOptions terminal_options;
     options.server_path = "phantom-mosh-terminal-server";
     std::string override_host;
     std::uint16_t override_port = 0;
     for ( int i = 1; i < argc; ++i ) {
       const std::string arg( argv[i] );
-      if ( arg == "--server" || arg == "--ssh-config" || arg == "--udp-host" || arg == "--udp-port" ) {
+      if ( arg == "--server" || arg == "--ssh-config" || arg == "--udp-host" || arg == "--udp-port"
+           || arg == "--shell" || arg == "--term" ) {
         if ( ++i == argc )
           throw Error( "missing terminal option value" );
+        if ( arg == "--shell" )
+          terminal_options.shell = argv[i];
+        if ( arg == "--term" )
+          terminal_options.term = argv[i];
         if ( arg == "--server" )
           options.server_path = argv[i];
         if ( arg == "--ssh-config" )
@@ -288,7 +295,7 @@ int main( int argc, char** argv )
       } else {
         if ( arg.empty() || arg[0] == '-' || !options.destination.empty() )
           throw Error( "usage: phantom-mosh-terminal [--server PATH] [--ssh-config FILE] [--udp-host IP] "
-                       "[--udp-port PORT] HOST" );
+                       "[--udp-port PORT] [--shell /PATH] [--term TERM] HOST" );
         options.destination = arg;
       }
     }
@@ -300,17 +307,16 @@ int main( int argc, char** argv )
     // SSH has authenticated and the terminal offer has been fully validated.
     SignalLifetime signals;
     options.cancel_fd = signals.cancellation_fd();
-    auto offer = start_terminal_over_ssh( options );
+    auto offer = start_terminal_over_ssh( options, terminal_options );
     const auto peer = UdpEndpoint::parse( override_host.empty() ? offer.server.host() : override_host,
                                           override_port ? override_port : offer.server.port() );
     auto socket = SessionSocket::client_to( peer );
     auto channel
       = SessionChannel::client( std::move( socket ), peer, std::move( offer.secret ), session_time_ms() );
     Network::UserStream input;
-    Terminal::Complete terminal( 80, 24 );
+    TerminalState terminal( 80, 24 );
     Client transport( input, terminal, std::move( channel ), session_time_ms() );
-    run( transport );
-    return 0;
+    return run( transport );
   } catch ( const std::exception& error ) {
     std::cerr << error.what() << '\n';
     return 1;

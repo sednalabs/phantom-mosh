@@ -313,12 +313,12 @@ LogLevel ERROR
                 relay.set_impairment()
                 relay.delayed_old_path()
                 output.clear()
-                os.write(master, b"n=$((n+1)); printf 'FINAL:%s\\n' \"$n\"; exit\n")
+                os.write(master, b"n=$((n+1)); printf 'FINAL:%s\\n' \"$n\"; exit 7\n")
                 witness(master, output, client, relay, b'FINAL:3')
                 deadline = time.monotonic() + 15
                 while client.poll() is None and time.monotonic() < deadline:
                     drain(master, output)
-                check(client.poll() == 0, 'recovered terminal did not close cleanly')
+                check(client.poll() == 7, 'recovered terminal did not preserve remote exit status 7')
                 check(termios.tcgetattr(slave) == original, 'client failed to restore local termios')
                 check(relay.client == original_client, 'client source endpoint changed')
                 check((root / 'known_hosts').read_text() == pin, 'known-hosts file modified')
@@ -332,7 +332,7 @@ LogLevel ERROR
                                       forwarded=relay.forwarded, deliberate_drops=relay.dropped,
                                       duplicates=relay.duplicates, delayed_datagrams=relay.reordered,
                                       socket_drops=relay.socket_drops, computed_witnesses=True,
-                                      stable_client_endpoint=True, raw_mode_restored=True, client_exit=0)))
+                                      stable_client_endpoint=True, raw_mode_restored=True, client_exit=7)))
                 relay = None
         finally:
             relay_error = None

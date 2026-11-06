@@ -2,6 +2,7 @@
 // Additional permission to link with OpenSSL: see COPYING.phantom.
 #ifndef PHANTOM_MOSH_TERMINAL_PTY_H
 #define PHANTOM_MOSH_TERMINAL_PTY_H
+#include <signal.h>
 #include <string>
 #include <sys/types.h>
 #include <vector>
@@ -17,7 +18,11 @@ namespace phantom {
 class TerminalPty
 {
 public:
-  TerminalPty( const std::vector<std::string>& argv, unsigned short rows, unsigned short columns );
+  TerminalPty( const std::vector<std::string>& argv,
+               unsigned short rows,
+               unsigned short columns,
+               int startup_timeout_ms = 5000,
+               const volatile sig_atomic_t* cancellation = nullptr );
   ~TerminalPty();
   TerminalPty( const TerminalPty& ) = delete;
   TerminalPty& operator=( const TerminalPty& ) = delete;
@@ -28,11 +33,17 @@ public:
   void resize( unsigned short rows, unsigned short columns );
   // Nonblocking reap. Returns true when the child has exited, preserving status.
   bool exited( int& status );
+  // Signal the owned group/leader and reap for at most one second. On false,
+  // ownership passes to the caller/subreaper; no later destructor retry occurs.
+  // A kernel-uninterruptible child may survive this deadline, so false must
+  // never be reported as successful cleanup. This is not process containment.
+  bool terminate() noexcept;
 
 private:
   int master_ = -1;
   pid_t child_ = -1;
   int status_ = 0;
+  bool cleanup_failed_ = false;
 };
 } // namespace phantom
 #endif
