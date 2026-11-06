@@ -1,0 +1,923 @@
+[
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "stock-mosh",
+    "pair_id": "idle-1",
+    "session_id": "session-1",
+    "build_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+    "binary_sha256": "0da7971bd752525aea2dda8baacc769b128d0cc8a754fea7b912ae455868578e",
+    "workload_sha256": "5faa4f42e81c42beb25fbc0e6bbba5a48c1b8739aa7917a24d1fc7762744a7c5",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2488.518236001255,
+        "udp_payload_bytes": 64,
+        "direction": -1
+      },
+      {
+        "time_ms": 2600.113416003296,
+        "udp_payload_bytes": 72,
+        "direction": 1
+      },
+      {
+        "time_ms": 5494.128025005921,
+        "udp_payload_bytes": 69,
+        "direction": -1
+      },
+      {
+        "time_ms": 5600.851665003574,
+        "udp_payload_bytes": 68,
+        "direction": 1
+      },
+      {
+        "time_ms": 8494.897426004172,
+        "udp_payload_bytes": 60,
+        "direction": -1
+      },
+      {
+        "time_ms": 8601.51599800156,
+        "udp_payload_bytes": 76,
+        "direction": 1
+      },
+      {
+        "time_ms": 11498.155832006887,
+        "udp_payload_bytes": 61,
+        "direction": -1
+      },
+      {
+        "time_ms": 11603.27652900014,
+        "udp_payload_bytes": 66,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "phantom-draft-01",
+    "pair_id": "idle-1",
+    "session_id": "session-2",
+    "build_sha": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+    "binary_sha256": "6151c7924be7f203747f78f4ebe89a5211896ab80cf109d425f842e6ddb4bcd9",
+    "workload_sha256": "5faa4f42e81c42beb25fbc0e6bbba5a48c1b8739aa7917a24d1fc7762744a7c5",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2520.4045319987927,
+        "udp_payload_bytes": 102,
+        "direction": -1
+      },
+      {
+        "time_ms": 2600.604563995148,
+        "udp_payload_bytes": 107,
+        "direction": 1
+      },
+      {
+        "time_ms": 5520.029586994497,
+        "udp_payload_bytes": 117,
+        "direction": -1
+      },
+      {
+        "time_ms": 5601.132534997305,
+        "udp_payload_bytes": 113,
+        "direction": 1
+      },
+      {
+        "time_ms": 8519.983940001111,
+        "udp_payload_bytes": 112,
+        "direction": -1
+      },
+      {
+        "time_ms": 8601.385989000846,
+        "udp_payload_bytes": 105,
+        "direction": 1
+      },
+      {
+        "time_ms": 11519.985214996268,
+        "udp_payload_bytes": 118,
+        "direction": -1
+      },
+      {
+        "time_ms": 11601.258024995332,
+        "udp_payload_bytes": 102,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "phantom-draft-01",
+    "pair_id": "idle-2",
+    "session_id": "session-3",
+    "build_sha": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+    "binary_sha256": "6151c7924be7f203747f78f4ebe89a5211896ab80cf109d425f842e6ddb4bcd9",
+    "workload_sha256": "5faa4f42e81c42beb25fbc0e6bbba5a48c1b8739aa7917a24d1fc7762744a7c5",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2519.6653270031675,
+        "udp_payload_bytes": 113,
+        "direction": -1
+      },
+      {
+        "time_ms": 2599.28530700563,
+        "udp_payload_bytes": 107,
+        "direction": 1
+      },
+      {
+        "time_ms": 5520.186706002278,
+        "udp_payload_bytes": 107,
+        "direction": -1
+      },
+      {
+        "time_ms": 5599.382650005282,
+        "udp_payload_bytes": 112,
+        "direction": 1
+      },
+      {
+        "time_ms": 8521.704843005864,
+        "udp_payload_bytes": 103,
+        "direction": -1
+      },
+      {
+        "time_ms": 8600.03556599986,
+        "udp_payload_bytes": 115,
+        "direction": 1
+      },
+      {
+        "time_ms": 11521.542729999055,
+        "udp_payload_bytes": 110,
+        "direction": -1
+      },
+      {
+        "time_ms": 11599.359855004877,
+        "udp_payload_bytes": 107,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "stock-mosh",
+    "pair_id": "idle-2",
+    "session_id": "session-4",
+    "build_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+    "binary_sha256": "0da7971bd752525aea2dda8baacc769b128d0cc8a754fea7b912ae455868578e",
+    "workload_sha256": "5faa4f42e81c42beb25fbc0e6bbba5a48c1b8739aa7917a24d1fc7762744a7c5",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2502.895665995311,
+        "udp_payload_bytes": 71,
+        "direction": -1
+      },
+      {
+        "time_ms": 2600.67179199541,
+        "udp_payload_bytes": 61,
+        "direction": 1
+      },
+      {
+        "time_ms": 5511.361570999725,
+        "udp_payload_bytes": 66,
+        "direction": -1
+      },
+      {
+        "time_ms": 5608.430137996038,
+        "udp_payload_bytes": 60,
+        "direction": 1
+      },
+      {
+        "time_ms": 8509.015796000313,
+        "udp_payload_bytes": 66,
+        "direction": -1
+      },
+      {
+        "time_ms": 8608.012732998759,
+        "udp_payload_bytes": 63,
+        "direction": 1
+      },
+      {
+        "time_ms": 11512.966889000381,
+        "udp_payload_bytes": 71,
+        "direction": -1
+      },
+      {
+        "time_ms": 11608.4569109953,
+        "udp_payload_bytes": 68,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "stock-mosh",
+    "pair_id": "idle-3",
+    "session_id": "session-5",
+    "build_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+    "binary_sha256": "0da7971bd752525aea2dda8baacc769b128d0cc8a754fea7b912ae455868578e",
+    "workload_sha256": "5faa4f42e81c42beb25fbc0e6bbba5a48c1b8739aa7917a24d1fc7762744a7c5",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2559.7365140056354,
+        "udp_payload_bytes": 70,
+        "direction": -1
+      },
+      {
+        "time_ms": 2599.5078460036893,
+        "udp_payload_bytes": 64,
+        "direction": 1
+      },
+      {
+        "time_ms": 5563.077791004616,
+        "udp_payload_bytes": 62,
+        "direction": -1
+      },
+      {
+        "time_ms": 5599.665940004343,
+        "udp_payload_bytes": 72,
+        "direction": 1
+      },
+      {
+        "time_ms": 8566.174360006698,
+        "udp_payload_bytes": 65,
+        "direction": -1
+      },
+      {
+        "time_ms": 8599.670796000282,
+        "udp_payload_bytes": 72,
+        "direction": 1
+      },
+      {
+        "time_ms": 11570.470986000146,
+        "udp_payload_bytes": 63,
+        "direction": -1
+      },
+      {
+        "time_ms": 11600.973366999824,
+        "udp_payload_bytes": 65,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "phantom-draft-01",
+    "pair_id": "idle-3",
+    "session_id": "session-6",
+    "build_sha": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+    "binary_sha256": "6151c7924be7f203747f78f4ebe89a5211896ab80cf109d425f842e6ddb4bcd9",
+    "workload_sha256": "5faa4f42e81c42beb25fbc0e6bbba5a48c1b8739aa7917a24d1fc7762744a7c5",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2519.911745999707,
+        "udp_payload_bytes": 114,
+        "direction": -1
+      },
+      {
+        "time_ms": 2600.4786049961695,
+        "udp_payload_bytes": 105,
+        "direction": 1
+      },
+      {
+        "time_ms": 5520.202072999382,
+        "udp_payload_bytes": 113,
+        "direction": -1
+      },
+      {
+        "time_ms": 5600.3535779964295,
+        "udp_payload_bytes": 112,
+        "direction": 1
+      },
+      {
+        "time_ms": 8520.45069399901,
+        "udp_payload_bytes": 104,
+        "direction": -1
+      },
+      {
+        "time_ms": 8600.931635999586,
+        "udp_payload_bytes": 118,
+        "direction": 1
+      },
+      {
+        "time_ms": 11519.764516000578,
+        "udp_payload_bytes": 115,
+        "direction": -1
+      },
+      {
+        "time_ms": 11600.70195300068,
+        "udp_payload_bytes": 105,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "stock-mosh",
+    "pair_id": "typing-1",
+    "session_id": "session-7",
+    "build_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+    "binary_sha256": "0da7971bd752525aea2dda8baacc769b128d0cc8a754fea7b912ae455868578e",
+    "workload_sha256": "5d256045c2c0048a15a6e7fe59d07ef1e77aef8e7adb87825007b0cd8e2ae2d3",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2019.1688740014797,
+        "udp_payload_bytes": 102,
+        "direction": 1
+      },
+      {
+        "time_ms": 2027.9955959995277,
+        "udp_payload_bytes": 123,
+        "direction": -1
+      },
+      {
+        "time_ms": 2078.6452910033404,
+        "udp_payload_bytes": 121,
+        "direction": -1
+      },
+      {
+        "time_ms": 2130.422788002761,
+        "udp_payload_bytes": 64,
+        "direction": 1
+      },
+      {
+        "time_ms": 4009.4617670038133,
+        "udp_payload_bytes": 98,
+        "direction": 1
+      },
+      {
+        "time_ms": 4018.173411001044,
+        "udp_payload_bytes": 128,
+        "direction": -1
+      },
+      {
+        "time_ms": 4068.545145004464,
+        "udp_payload_bytes": 131,
+        "direction": -1
+      },
+      {
+        "time_ms": 4119.08185500215,
+        "udp_payload_bytes": 77,
+        "direction": 1
+      },
+      {
+        "time_ms": 6019.981277997431,
+        "udp_payload_bytes": 111,
+        "direction": 1
+      },
+      {
+        "time_ms": 6028.829048998887,
+        "udp_payload_bytes": 121,
+        "direction": -1
+      },
+      {
+        "time_ms": 6079.499732004479,
+        "udp_payload_bytes": 124,
+        "direction": -1
+      },
+      {
+        "time_ms": 6129.606695001712,
+        "udp_payload_bytes": 60,
+        "direction": 1
+      },
+      {
+        "time_ms": 9083.125937002478,
+        "udp_payload_bytes": 64,
+        "direction": -1
+      },
+      {
+        "time_ms": 9128.846641004202,
+        "udp_payload_bytes": 71,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "phantom-draft-01",
+    "pair_id": "typing-1",
+    "session_id": "session-8",
+    "build_sha": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+    "binary_sha256": "6151c7924be7f203747f78f4ebe89a5211896ab80cf109d425f842e6ddb4bcd9",
+    "workload_sha256": "5d256045c2c0048a15a6e7fe59d07ef1e77aef8e7adb87825007b0cd8e2ae2d3",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2016.6103119991021,
+        "udp_payload_bytes": 150,
+        "direction": 1
+      },
+      {
+        "time_ms": 2026.3071959998342,
+        "udp_payload_bytes": 163,
+        "direction": -1
+      },
+      {
+        "time_ms": 2126.8007530015893,
+        "udp_payload_bytes": 115,
+        "direction": 1
+      },
+      {
+        "time_ms": 2134.500856998784,
+        "udp_payload_bytes": 128,
+        "direction": -1
+      },
+      {
+        "time_ms": 2234.863204997964,
+        "udp_payload_bytes": 115,
+        "direction": 1
+      },
+      {
+        "time_ms": 4018.458054997609,
+        "udp_payload_bytes": 153,
+        "direction": 1
+      },
+      {
+        "time_ms": 4028.199742999277,
+        "udp_payload_bytes": 179,
+        "direction": -1
+      },
+      {
+        "time_ms": 4128.685625997605,
+        "udp_payload_bytes": 109,
+        "direction": 1
+      },
+      {
+        "time_ms": 4136.181023000972,
+        "udp_payload_bytes": 114,
+        "direction": -1
+      },
+      {
+        "time_ms": 4236.2472339955275,
+        "udp_payload_bytes": 109,
+        "direction": 1
+      },
+      {
+        "time_ms": 6029.542258998845,
+        "udp_payload_bytes": 152,
+        "direction": 1
+      },
+      {
+        "time_ms": 6039.141152999946,
+        "udp_payload_bytes": 181,
+        "direction": -1
+      },
+      {
+        "time_ms": 6139.497945994663,
+        "udp_payload_bytes": 108,
+        "direction": 1
+      },
+      {
+        "time_ms": 6148.086809000233,
+        "udp_payload_bytes": 118,
+        "direction": -1
+      },
+      {
+        "time_ms": 6249.226531996101,
+        "udp_payload_bytes": 103,
+        "direction": 1
+      },
+      {
+        "time_ms": 9148.614227000508,
+        "udp_payload_bytes": 107,
+        "direction": -1
+      },
+      {
+        "time_ms": 9250.055286000133,
+        "udp_payload_bytes": 103,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "phantom-draft-01",
+    "pair_id": "typing-2",
+    "session_id": "session-9",
+    "build_sha": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+    "binary_sha256": "6151c7924be7f203747f78f4ebe89a5211896ab80cf109d425f842e6ddb4bcd9",
+    "workload_sha256": "5d256045c2c0048a15a6e7fe59d07ef1e77aef8e7adb87825007b0cd8e2ae2d3",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2027.006556003471,
+        "udp_payload_bytes": 152,
+        "direction": 1
+      },
+      {
+        "time_ms": 2035.781358004897,
+        "udp_payload_bytes": 177,
+        "direction": -1
+      },
+      {
+        "time_ms": 2135.9462260006694,
+        "udp_payload_bytes": 117,
+        "direction": 1
+      },
+      {
+        "time_ms": 2144.4194940049783,
+        "udp_payload_bytes": 126,
+        "direction": -1
+      },
+      {
+        "time_ms": 2245.4727700023795,
+        "udp_payload_bytes": 104,
+        "direction": 1
+      },
+      {
+        "time_ms": 4019.5771729995613,
+        "udp_payload_bytes": 141,
+        "direction": 1
+      },
+      {
+        "time_ms": 4029.1421040019486,
+        "udp_payload_bytes": 174,
+        "direction": -1
+      },
+      {
+        "time_ms": 4130.147182004293,
+        "udp_payload_bytes": 118,
+        "direction": 1
+      },
+      {
+        "time_ms": 4137.011723003525,
+        "udp_payload_bytes": 130,
+        "direction": -1
+      },
+      {
+        "time_ms": 4237.407398999494,
+        "udp_payload_bytes": 102,
+        "direction": 1
+      },
+      {
+        "time_ms": 6020.224746003805,
+        "udp_payload_bytes": 148,
+        "direction": 1
+      },
+      {
+        "time_ms": 6029.566201999842,
+        "udp_payload_bytes": 169,
+        "direction": -1
+      },
+      {
+        "time_ms": 6130.16337800218,
+        "udp_payload_bytes": 108,
+        "direction": 1
+      },
+      {
+        "time_ms": 6138.70181600214,
+        "udp_payload_bytes": 114,
+        "direction": -1
+      },
+      {
+        "time_ms": 6238.919406001514,
+        "udp_payload_bytes": 112,
+        "direction": 1
+      },
+      {
+        "time_ms": 9144.513358005497,
+        "udp_payload_bytes": 117,
+        "direction": -1
+      },
+      {
+        "time_ms": 9239.271411999653,
+        "udp_payload_bytes": 117,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "stock-mosh",
+    "pair_id": "typing-2",
+    "session_id": "session-10",
+    "build_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+    "binary_sha256": "0da7971bd752525aea2dda8baacc769b128d0cc8a754fea7b912ae455868578e",
+    "workload_sha256": "5d256045c2c0048a15a6e7fe59d07ef1e77aef8e7adb87825007b0cd8e2ae2d3",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2011.2012819954543,
+        "udp_payload_bytes": 99,
+        "direction": 1
+      },
+      {
+        "time_ms": 2020.5777189985383,
+        "udp_payload_bytes": 123,
+        "direction": -1
+      },
+      {
+        "time_ms": 2070.173531996261,
+        "udp_payload_bytes": 132,
+        "direction": -1
+      },
+      {
+        "time_ms": 2120.81794799451,
+        "udp_payload_bytes": 68,
+        "direction": 1
+      },
+      {
+        "time_ms": 4021.3187909976114,
+        "udp_payload_bytes": 104,
+        "direction": 1
+      },
+      {
+        "time_ms": 4030.6161849948694,
+        "udp_payload_bytes": 127,
+        "direction": -1
+      },
+      {
+        "time_ms": 4080.320009001298,
+        "udp_payload_bytes": 131,
+        "direction": -1
+      },
+      {
+        "time_ms": 4130.89516099717,
+        "udp_payload_bytes": 75,
+        "direction": 1
+      },
+      {
+        "time_ms": 6018.139694999263,
+        "udp_payload_bytes": 114,
+        "direction": 1
+      },
+      {
+        "time_ms": 6026.88742600003,
+        "udp_payload_bytes": 130,
+        "direction": -1
+      },
+      {
+        "time_ms": 6077.3535479966085,
+        "udp_payload_bytes": 124,
+        "direction": -1
+      },
+      {
+        "time_ms": 6127.930488000857,
+        "udp_payload_bytes": 61,
+        "direction": 1
+      },
+      {
+        "time_ms": 9081.343416997697,
+        "udp_payload_bytes": 75,
+        "direction": -1
+      },
+      {
+        "time_ms": 9129.17774199741,
+        "udp_payload_bytes": 65,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "stock-mosh",
+    "pair_id": "typing-3",
+    "session_id": "session-11",
+    "build_sha": "decd9b705eb81626f694335b8d5940538beb06da",
+    "binary_sha256": "0da7971bd752525aea2dda8baacc769b128d0cc8a754fea7b912ae455868578e",
+    "workload_sha256": "5d256045c2c0048a15a6e7fe59d07ef1e77aef8e7adb87825007b0cd8e2ae2d3",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2008.538704001694,
+        "udp_payload_bytes": 113,
+        "direction": 1
+      },
+      {
+        "time_ms": 2017.6616590033518,
+        "udp_payload_bytes": 128,
+        "direction": -1
+      },
+      {
+        "time_ms": 2068.0833389997133,
+        "udp_payload_bytes": 123,
+        "direction": -1
+      },
+      {
+        "time_ms": 2118.650291005906,
+        "udp_payload_bytes": 70,
+        "direction": 1
+      },
+      {
+        "time_ms": 4019.5563070010394,
+        "udp_payload_bytes": 103,
+        "direction": 1
+      },
+      {
+        "time_ms": 4028.8474629996927,
+        "udp_payload_bytes": 127,
+        "direction": -1
+      },
+      {
+        "time_ms": 4079.288845001429,
+        "udp_payload_bytes": 130,
+        "direction": -1
+      },
+      {
+        "time_ms": 4129.775970999617,
+        "udp_payload_bytes": 71,
+        "direction": 1
+      },
+      {
+        "time_ms": 6009.970677005185,
+        "udp_payload_bytes": 113,
+        "direction": 1
+      },
+      {
+        "time_ms": 6018.262183999468,
+        "udp_payload_bytes": 124,
+        "direction": -1
+      },
+      {
+        "time_ms": 6069.990547999623,
+        "udp_payload_bytes": 126,
+        "direction": -1
+      },
+      {
+        "time_ms": 6118.52815200109,
+        "udp_payload_bytes": 64,
+        "direction": 1
+      },
+      {
+        "time_ms": 9073.078414003248,
+        "udp_payload_bytes": 63,
+        "direction": -1
+      },
+      {
+        "time_ms": 9118.80640200252,
+        "udp_payload_bytes": 68,
+        "direction": 1
+      }
+    ]
+  },
+  {
+    "schema": "phantom-matched-run-01",
+    "implementation": "phantom-draft-01",
+    "pair_id": "typing-3",
+    "session_id": "session-12",
+    "build_sha": "f52273b183e7f9f4a99549804b4f43a3ca3e959d",
+    "binary_sha256": "6151c7924be7f203747f78f4ebe89a5211896ab80cf109d425f842e6ddb4bcd9",
+    "workload_sha256": "5d256045c2c0048a15a6e7fe59d07ef1e77aef8e7adb87825007b0cd8e2ae2d3",
+    "network_profile": "loopback-relay-no-added-impairment-v1",
+    "acquisition_profile": "userspace-udp-relay-v1",
+    "observation_duration_ms": 12000,
+    "evidence_kind": "real-terminal-capture",
+    "observation_ok": true,
+    "session_functioning": true,
+    "capture_dropped_packets": 0,
+    "packets": [
+      {
+        "time_ms": 2021.1844020013814,
+        "udp_payload_bytes": 148,
+        "direction": 1
+      },
+      {
+        "time_ms": 2030.727563003893,
+        "udp_payload_bytes": 176,
+        "direction": -1
+      },
+      {
+        "time_ms": 2131.038022998837,
+        "udp_payload_bytes": 107,
+        "direction": 1
+      },
+      {
+        "time_ms": 2139.503976999549,
+        "udp_payload_bytes": 123,
+        "direction": -1
+      },
+      {
+        "time_ms": 2240.571105001436,
+        "udp_payload_bytes": 110,
+        "direction": 1
+      },
+      {
+        "time_ms": 4016.443184998934,
+        "udp_payload_bytes": 148,
+        "direction": 1
+      },
+      {
+        "time_ms": 4025.0188049976714,
+        "udp_payload_bytes": 178,
+        "direction": -1
+      },
+      {
+        "time_ms": 4125.044225002057,
+        "udp_payload_bytes": 113,
+        "direction": 1
+      },
+      {
+        "time_ms": 4133.4955069978605,
+        "udp_payload_bytes": 123,
+        "direction": -1
+      },
+      {
+        "time_ms": 4234.4775710007525,
+        "udp_payload_bytes": 118,
+        "direction": 1
+      },
+      {
+        "time_ms": 6012.867308003479,
+        "udp_payload_bytes": 149,
+        "direction": 1
+      },
+      {
+        "time_ms": 6021.029153998825,
+        "udp_payload_bytes": 177,
+        "direction": -1
+      },
+      {
+        "time_ms": 6121.51110600098,
+        "udp_payload_bytes": 108,
+        "direction": 1
+      },
+      {
+        "time_ms": 6128.903579003236,
+        "udp_payload_bytes": 121,
+        "direction": -1
+      },
+      {
+        "time_ms": 6228.964011002972,
+        "udp_payload_bytes": 115,
+        "direction": 1
+      },
+      {
+        "time_ms": 9129.950745002134,
+        "udp_payload_bytes": 108,
+        "direction": -1
+      },
+      {
+        "time_ms": 9229.36443099752,
+        "udp_payload_bytes": 112,
+        "direction": 1
+      }
+    ]
+  }
+]
