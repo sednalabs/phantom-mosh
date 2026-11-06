@@ -46,7 +46,9 @@ Update current guidance when implementation lands, but preserve historical
 measurement data, source/binary hashes and the scope of dated reports. Never
 present past CI or measurements as a result for a new commit.
 
-Useful repository checks, without compiling C++, include:
+Useful repository checks, without compiling C++, include the commands below.
+The evaluation tests use the Python standard library. The runner-policy check
+and its tests additionally require PyYAML (the `python3-yaml` package on Ubuntu).
 
 ```sh
 python3 -m unittest discover -s evaluation -p 'test_*.py' -v
