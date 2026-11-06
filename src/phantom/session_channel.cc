@@ -283,6 +283,27 @@ void SessionChannel::start_close( std::uint64_t now )
     throw;
   }
 }
+void SessionChannel::revalidate_path( std::uint64_t now )
+{
+  check_time( now );
+  try {
+    advance_time( now );
+  } catch ( ... ) {
+    finish( ChannelEnd::failed );
+    throw;
+  }
+  if ( !client_ || !established_ || ( state() != ChannelState::active && state() != ChannelState::connecting ) )
+    throw Error( "invalid channel path revalidation" );
+  // An already-running recovery keeps its request, backoff and fixed deadline.
+  if ( state() == ChannelState::connecting )
+    return;
+  client_->revalidate_path();
+  phase_started_ = now;
+  retry_started_ = now;
+  retry_interval_ = policy_.retry_ms;
+  retry_sent_ = false;
+  immediate_ = true;
+}
 void SessionChannel::rebind( SessionSocket&& socket, std::uint64_t now )
 {
   check_time( now );

@@ -14,6 +14,8 @@ namespace phantom {
 class SspConnection
 {
 public:
+  // Trigger a path proof only after traffic goes unanswered, not during idle.
+  static constexpr std::uint64_t PATH_SILENCE_MS = 5000;
   static constexpr std::size_t FRAGMENT_HEADER = 10;
   static constexpr std::size_t MAX_FRAGMENT = SESSION_MAX_DATA - SSP_TIMING_BYTES;
   static constexpr std::size_t MAX_FRAGMENT_CONTENTS = MAX_FRAGMENT - FRAGMENT_HEADER;
@@ -54,6 +56,7 @@ private:
   std::unique_ptr<SessionChannel> channel_;
   SspTiming timing_;
   std::uint64_t now_, roundtrip_ = 0;
+  std::optional<std::uint64_t> unanswered_since_;
   std::deque<Bytes> received_;
   Network::Addr peer_ {};
   socklen_t peer_size_ = 0;

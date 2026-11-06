@@ -118,3 +118,31 @@ The separate `phantom-terminal-ssh` test exercises the actual experimental
 SSH-to-PTY client/server; see [terminal-integration.md](terminal-integration.md).
 It does not establish native Windows support, packaging readiness, independent
 cryptographic assurance or privacy against statistical classifiers.
+
+## Silent NAT remapping
+
+After a successful client send goes unanswered for five seconds, the SSP adapter
+requests a new HELLO/challenge/CONFIRM proof on its existing socket. Only admitted,
+authenticated SSP frames or successful path activation reset that timer. Idle
+silence with no unanswered send does not start probes. This is a conservative
+liveness heuristic, not a measured RTT guarantee: a one-way application workload
+may also trigger a proof. The session keeps all record counters and replay state;
+DATA from an unvalidated source still cannot move the server route. Once recovery
+starts, existing retry backoff and any explicit recovery deadline remain in force.
+
+The convergence test additionally runs through a user-space UDP NAT relay on
+IPv4 and IPv6. Its outside socket gets a new real source port while the client's
+socket and destination remain unchanged. Tests cover remapping amid loss,
+duplication and reordering, delayed old-path traffic, a second remap during the
+logical 180-day blackout, terminal/input convergence and orderly shutdown.
+A source-port change is asserted, and the server's validated peer must remain the
+new mapping after delayed old-path traffic. SSP connection tests check the exact
+five-second boundary, idle silence, malformed authenticated frames and accepted
+responses. Before the recovery change, the relay case failed to converge during
+a 30-second logical recovery window; direct IPv4/IPv6 cases passed.
+
+These tests use real loopback UDP and deterministic logical time. They do not
+exercise kernel conntrack, a physical router, WAN timing, packet queue congestion,
+path-MTU changes, cross-address-family migration or a launched PTY. A privileged
+network-namespace/router experiment remains separate acceptance work; the relay
+must not be described as empirical kernel-NAT validation.

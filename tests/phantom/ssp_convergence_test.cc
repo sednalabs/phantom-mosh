@@ -203,7 +203,68 @@ static void convergence_oracle()
   acknowledged.set_echo_ack( 2000 );
   CHECK( !same_terminal( source, acknowledged ) );
 }
-static void convergence( const char* host )
+// A user-space NAT model: the client retains its socket and destination while
+// the server observes a new real UDP source port. No plaintext is inspected.
+class NatRelay
+{
+  SessionSocket inside_;
+  std::unique_ptr<SessionSocket> outside_;
+  std::vector<std::unique_ptr<SessionSocket>> retired_;
+  UdpEndpoint server_;
+  std::optional<UdpEndpoint> client_;
+  std::string host_;
+  bool hold_next_ = false;
+  std::optional<Bytes> held_;
+
+public:
+  NatRelay( const char* host, UdpEndpoint server )
+    : inside_( SessionSocket::bind( host ) ),
+      outside_( std::make_unique<SessionSocket>( SessionSocket::bind( host ) ) ), server_( server ), host_( host )
+  {}
+  const UdpEndpoint& endpoint() const { return inside_.local(); }
+  const UdpEndpoint& mapped_endpoint() const { return outside_->local(); }
+  void hold_next() { hold_next_ = true; }
+  bool holding() const { return held_.has_value(); }
+  void release_retired()
+  {
+    CHECK( held_ && !retired_.empty() );
+    retired_.back()->send( server_, *held_ );
+    held_.reset();
+  }
+  void remap()
+  {
+    auto replacement = std::make_unique<SessionSocket>( SessionSocket::bind( host_ ) );
+    CHECK( replacement->local() != outside_->local() );
+    retired_.push_back( std::move( outside_ ) );
+    outside_ = std::move( replacement );
+  }
+  void pump()
+  {
+    for ( unsigned i = 0; i < 64; ++i ) {
+      auto packet = inside_.receive();
+      if ( !packet )
+        break;
+      client_ = packet->peer;
+      if ( hold_next_ ) {
+        held_ = std::move( packet->bytes );
+        hold_next_ = false;
+      } else
+        outside_->send( server_, packet->bytes );
+    }
+    for ( unsigned i = 0; i < 64; ++i ) {
+      auto packet = outside_->receive();
+      if ( !packet )
+        break;
+      if ( packet->peer == server_ && client_ )
+        inside_.send( *client_, packet->bytes );
+    }
+    // Expired mappings do not deliver replies, but retain descriptors so a
+    // delayed interposed send cannot target a reused descriptor.
+    for ( auto& socket : retired_ )
+      for ( unsigned i = 0; i < 64 && socket->receive(); ++i ) {}
+  }
+};
+static void convergence( const char* host, bool nat = false )
 {
   using namespace impairment;
   delayed.reset();
@@ -216,7 +277,10 @@ static void convergence( const char* host )
   policy.retry_ms = 20;
   policy.receive_budget = 16;
   auto server_socket = SessionSocket::bind( host );
-  const auto endpoint = server_socket.local();
+  std::unique_ptr<NatRelay> relay;
+  if ( nat )
+    relay = std::make_unique<NatRelay>( host, server_socket.local() );
+  const auto endpoint = relay ? relay->endpoint() : server_socket.local();
   auto client_socket = SessionSocket::client_to( endpoint );
   Network::UserStream initial_input;
   Terminal::Complete initial_terminal( 80, 24 );
@@ -225,18 +289,21 @@ static void convergence( const char* host )
     initial_terminal,
     SessionChannel::client( std::move( client_socket ), endpoint, Bootstrap::parse( KEY ), now, policy, crypto ),
     now );
-  Server server(
-    initial_terminal,
-    initial_input,
-    SessionChannel::server( std::move( server_socket ), Bootstrap::parse( KEY ), now, {}, policy, crypto ),
-    now );
+  auto server_channel
+    = SessionChannel::server( std::move( server_socket ), Bootstrap::parse( KEY ), now, {}, policy, crypto );
+  const auto* observed_server_channel = server_channel.get();
+  Server server( initial_terminal, initial_input, std::move( server_channel ), now );
   Network::UserStream expected_input, delivered_input;
   Terminal::Complete displayed( 80, 24 );
   std::uint64_t last_input_frame = 0;
   auto step = [&] {
     now += 10;
     client.service( now );
+    if ( relay )
+      relay->pump();
     server.service( now );
+    if ( relay )
+      relay->pump();
     const auto diff = server.get_remote_diff();
     Network::UserStream input;
     input.apply_string( diff );
@@ -289,6 +356,34 @@ static void convergence( const char* host )
   CHECK( client.timing().samples() > 0 && server.timing().samples() > 0 );
   CHECK( client.get_sent_state_acked() > 0 && server.get_sent_state_acked() > 0 );
 
+  if ( relay ) {
+    const auto original_fds = client.fds();
+    relay->hold_next();
+    type( "queued on retired mapping\n" );
+    for ( unsigned i = 0; i < 1000 && !relay->holding(); ++i )
+      step();
+    CHECK( relay->holding() );
+    mode = Mode::chaotic;
+    relay->remap();
+    type( "transparent NAT remap without client notification\n" );
+    redraw( server.get_current_state(), 43 );
+    for ( unsigned i = 0; i < 600; ++i )
+      step();
+    mode = Mode::reliable;
+    deliver_delayed();
+    for ( unsigned i = 0; i < 3000 && !converged(); ++i )
+      step();
+    CHECK( client.fds() == original_fds );
+    CHECK( converged() );
+    CHECK( observed_server_channel->peer() == relay->mapped_endpoint() );
+    relay->release_retired();
+    type( "old path cannot roll the route back\n" );
+    for ( unsigned i = 0; i < 3000 && !converged(); ++i )
+      step();
+    CHECK( converged() );
+    CHECK( observed_server_channel->peer() == relay->mapped_endpoint() );
+  }
+
   mode = Mode::blackhole;
   redraw( server.get_current_state(), 47 );
   type( "input retained during the outage\n" );
@@ -298,8 +393,12 @@ static void convergence( const char* host )
   CHECK( client.get_latest_remote_state().state == old_screen );
   CHECK( !( old_screen == server.get_current_state() ) );
   now += 180ULL * 24 * 60 * 60 * 1000;
-  client.rebind( SessionSocket::bind( host ), now );
-  CHECK( !client.timing().has_sample() );
+  if ( relay )
+    relay->remap();
+  else {
+    client.rebind( SessionSocket::bind( host ), now );
+    CHECK( !client.timing().has_sample() );
+  }
   for ( unsigned i = 0; i < 300; ++i )
     step();
   CHECK( client.state() == ChannelState::connecting );
@@ -314,19 +413,28 @@ static void convergence( const char* host )
   for ( unsigned i = 0; i < 1000 && !client.shutdown_acknowledged(); ++i ) {
     now += 10;
     client.service( now );
+    if ( relay )
+      relay->pump();
     server.service( now );
+    if ( relay )
+      relay->pump();
   }
   CHECK( client.shutdown_acknowledged() && server.counterparty_shutdown_ack_sent() );
   client.start_channel_close( now );
   for ( unsigned i = 0; i < 1000 && client.state() != ChannelState::closed; ++i ) {
     now += 10;
     client.service( now );
+    if ( relay )
+      relay->pump();
     server.service( now );
+    if ( relay )
+      relay->pump();
   }
   CHECK( client.state() == ChannelState::closed && client.end_reason() == ChannelEnd::peer_closed );
   server.stop();
   delayed.reset();
-  std::cout << "PASS " << host << " real terminal/resize/UTF-8/input convergence, outage, migration and shutdown\n";
+  std::cout << "PASS " << host << ( nat ? " NAT relay" : " direct" )
+            << " real terminal/resize/UTF-8/input convergence, outage, migration and shutdown\n";
 }
 int main()
 {
@@ -336,6 +444,8 @@ int main()
     convergence_oracle();
     convergence( "127.0.0.1" );
     convergence( "::1" );
+    convergence( "127.0.0.1", true );
+    convergence( "::1", true );
     CHECK( !impairment::over_budget && impairment::full_size > 0 );
     CHECK( impairment::drops > 0 && impairment::duplicates > 0 && impairment::reordered > 0
            && impairment::failures > 0 );

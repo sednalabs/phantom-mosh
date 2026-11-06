@@ -63,3 +63,9 @@ add_test(NAME phantom-terminal-ssh
     $<TARGET_FILE:phantom-mosh-server> $<TARGET_FILE:phantom-mosh-probe>
     $<TARGET_FILE:phantom_terminal_idle_driver> ${PHANTOM_SSH_TEST_ARGUMENTS})
 set_tests_properties(phantom-terminal-ssh PROPERTIES TIMEOUT 60 SKIP_RETURN_CODE 77)
+
+add_test(NAME phantom-terminal-recovery
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/phantom/terminal_recovery_test.py
+    $<TARGET_FILE:phantom-mosh-terminal-server> $<TARGET_FILE:phantom-mosh-terminal>
+    ${PHANTOM_SSH_TEST_ARGUMENTS})
+set_tests_properties(phantom-terminal-recovery PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
