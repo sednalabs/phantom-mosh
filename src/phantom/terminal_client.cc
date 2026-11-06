@@ -319,6 +319,6 @@ int main( int argc, char** argv )
     return run( transport );
   } catch ( const std::exception& error ) {
     std::cerr << error.what() << '\n';
-    return 1;
+    return stopping ? 128 + stopping : 1;
   }
 }

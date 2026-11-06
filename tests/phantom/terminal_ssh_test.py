@@ -303,7 +303,8 @@ LogLevel ERROR
                         with connection:
                             client.send_signal(signal.SIGTERM)
                             stdout, stderr = client.communicate(timeout=3)
-                            check(client.returncode != 0, 'cancelled startup claimed success')
+                            check(client.returncode == 128 + signal.SIGTERM,
+                                  'cancelled startup lost the local signal status')
                             check(termios.tcgetattr(slave) == original, 'startup cancellation changed terminal mode')
                             connection.settimeout(2)
                             while connection.recv(1024):
