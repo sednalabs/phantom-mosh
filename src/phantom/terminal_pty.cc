@@ -2,9 +2,11 @@
 // Additional permission to link with OpenSSL: see COPYING.phantom.
 #include "terminal_pty.h"
 #include <cerrno>
+#include <chrono>
 #include <climits>
 #include <cstdlib>
 #include <fcntl.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdexcept>
 #include <sys/ioctl.h>
@@ -21,9 +23,17 @@ void dimensions( unsigned short rows, unsigned short columns )
     throw std::invalid_argument( "PTY dimensions must be nonzero" );
 }
 }
-TerminalPty::TerminalPty( const std::vector<std::string>& argv, unsigned short rows, unsigned short columns )
+TerminalPty::TerminalPty( const std::vector<std::string>& argv,
+                          unsigned short rows,
+                          unsigned short columns,
+                          int startup_timeout_ms,
+                          const volatile sig_atomic_t* cancellation )
 {
   dimensions( rows, columns );
+  if ( startup_timeout_ms < 1 || startup_timeout_ms > 120000 )
+    throw std::invalid_argument( "invalid PTY startup timeout" );
+  if ( cancellation && *cancellation )
+    throw std::runtime_error( "PTY startup cancelled" );
   struct sigaction reaping
   {};
   if ( ::sigaction( SIGCHLD, nullptr, &reaping ) != 0 || reaping.sa_handler != SIG_DFL
@@ -94,20 +104,31 @@ TerminalPty::TerminalPty( const std::vector<std::string>& argv, unsigned short r
     errors[1] = -1;
     char error;
     ssize_t count;
-    do {
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( startup_timeout_ms );
+    for ( ;; ) {
+      if ( cancellation && *cancellation )
+        throw std::runtime_error( "PTY startup cancelled" );
+      if ( std::chrono::steady_clock::now() >= deadline )
+        throw std::runtime_error( "PTY startup timed out" );
+      pollfd event { errors[0], POLLIN, 0 };
+      const int ready = ::poll( &event, 1, 20 );
+      if ( ready < 0 && errno == EINTR )
+        continue;
+      if ( ready < 0 || event.revents & ( POLLERR | POLLNVAL ) )
+        throw std::runtime_error( "PTY startup pipe failed" );
+      if ( !ready )
+        continue;
       count = ::read( errors[0], &error, 1 );
-    } while ( count < 0 && errno == EINTR );
+      if ( count < 0 && errno == EINTR )
+        continue;
+      break;
+    }
     ::close( errors[0] );
     errors[0] = -1;
     if ( count != 0 )
       throw std::runtime_error( "PTY exec failed" );
   } catch ( ... ) {
-    if ( child_ > 0 ) {
-      ::kill( -child_, SIGKILL );
-      ::kill( child_, SIGKILL );
-      while ( ::waitpid( child_, nullptr, 0 ) < 0 && errno == EINTR ) {}
-      child_ = -1;
-    }
+    (void)terminate();
     if ( master_ >= 0 )
       ::close( master_ );
     if ( slave >= 0 )
@@ -120,14 +141,42 @@ TerminalPty::TerminalPty( const std::vector<std::string>& argv, unsigned short r
 }
 TerminalPty::~TerminalPty()
 {
-  // Kill the owned session group before reaping its leader, avoiding PID reuse.
-  if ( child_ > 0 ) {
-    ::kill( -child_, SIGKILL );
-    ::kill( child_, SIGKILL );
-    while ( ::waitpid( child_, nullptr, 0 ) < 0 && errno == EINTR ) {}
-  }
+  (void)terminate();
   if ( master_ >= 0 )
     ::close( master_ );
+}
+bool TerminalPty::terminate() noexcept
+{
+  if ( child_ <= 0 )
+    return !cleanup_failed_;
+  // The unreaped child pins its identity until cleanup. Exclusive reaping is
+  // required; never signal a PID after another owner has already reaped it.
+  siginfo_t info {};
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 1 );
+  int waited;
+  do {
+    waited = ::waitid( P_PID, static_cast<id_t>( child_ ), &info, WEXITED | WNOHANG | WNOWAIT );
+  } while ( waited < 0 && errno == EINTR && std::chrono::steady_clock::now() < deadline );
+  if ( waited < 0 ) {
+    child_ = -1;
+    cleanup_failed_ = true;
+    return false;
+  }
+  ::kill( -child_, SIGKILL );
+  ::kill( child_, SIGKILL );
+  for ( ;; ) {
+    const auto result = ::waitpid( child_, &status_, WNOHANG );
+    if ( result == child_ ) {
+      child_ = -1;
+      return true;
+    }
+    if ( ( result < 0 && errno != EINTR ) || std::chrono::steady_clock::now() >= deadline ) {
+      child_ = -1;
+      cleanup_failed_ = true;
+      return false;
+    }
+    (void)::poll( nullptr, 0, 10 );
+  }
 }
 void TerminalPty::resize( unsigned short rows, unsigned short columns )
 {
@@ -141,6 +190,8 @@ void TerminalPty::resize( unsigned short rows, unsigned short columns )
 }
 bool TerminalPty::exited( int& status )
 {
+  if ( cleanup_failed_ )
+    throw std::runtime_error( "PTY cleanup did not complete" );
   if ( child_ > 0 ) {
     siginfo_t info {};
     int result;

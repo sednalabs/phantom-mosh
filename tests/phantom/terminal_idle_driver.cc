@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Additional permission to link with OpenSSL: see COPYING.phantom.
 // Actual SSH/PTY server regression: ACK-only SSP frames are not user input.
-#include "src/statesync/completeterminal.h"
 #include "src/statesync/user.h"
 #include "ssh_startup.h"
 #include "ssp_transport.h"
+#include "terminal_state.h"
 #include <algorithm>
 #include <clocale>
 #include <iostream>
 #include <poll.h>
 using namespace phantom;
-using Client = SspTransport<Network::UserStream, Terminal::Complete>;
+using Client = SspTransport<Network::UserStream, TerminalState>;
 void require( bool value, const char* message )
 {
   if ( !value )
@@ -38,7 +38,7 @@ int main( int argc, char** argv )
     auto socket = SessionSocket::client_to( offer.server );
     const auto now = session_time_ms();
     Network::UserStream input;
-    Terminal::Complete screen( 80, 24 );
+    TerminalState screen( 80, 24 );
     Client client( input,
                    screen,
                    SessionChannel::client( std::move( socket ), offer.server, std::move( offer.secret ), now ),

@@ -81,6 +81,10 @@ def main():
         invalid = subprocess.run([probe, '--udp-port', invalid_port, 'unused'], capture_output=True, timeout=3)
         check(invalid.returncode != 0 and b'invalid UDP port override' in invalid.stderr,
               'invalid UDP port reached SSH startup')
+    for flag, value in (('--shell', 'sh'), ('--shell', '/bin/sh\n'), ('--term', 'xterm;anything')):
+        invalid = subprocess.run([probe, flag, value, 'unused'], capture_output=True, timeout=3)
+        check(invalid.returncode != 0 and b'invalid' in invalid.stderr,
+              'invalid terminal option reached SSH startup')
     keygen = shutil.which('ssh-keygen')
     sshd = shutil.which('sshd') or next((str(p) for p in (Path('/usr/sbin/sshd'), Path('/sbin/sshd')) if p.is_file()), None)
     if not keygen or not sshd or not Path('/usr/bin/ssh').is_file():
@@ -177,6 +181,30 @@ LogLevel ERROR
                       'real SSH-to-PTY terminal exchange failed (output suppressed)')
                 check(known.read_text() == pin, 'known-hosts file modified')
                 finish_sessions({daemon.pid}, server, observed)
+                # Exit status is authenticated state, not a terminal marker.
+                # Keep the final computed output visible before propagating it.
+                shell = root / "shell with 'quotes'; $literal"
+                shell.symlink_to('/bin/sh')
+                configured = args[:-1] + ['--shell', str(shell), '--term', 'vt100', args[-1]]
+                for command, expected in ((b'exit 7', 7), (b'exit 255', 255), (b'kill -KILL $$', 137)):
+                    client = subprocess.Popen(configured, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    observed = set()
+                    deadline = time.monotonic() + 10
+                    while not observed and time.monotonic() < deadline and client.poll() is None:
+                        observed = {pid for pid in children() if is_server(pid, server)}
+                        time.sleep(0.01)
+                    check(observed, 'exit-status terminal server not observed')
+                    stdout, stderr = client.communicate(b"printf 'FINAL-%s-%s\\n' \"$((6*7))\" \"$TERM\"; " + command + b'\n', timeout=15)
+                    check(client.returncode == expected and b'FINAL-42-vt100' in stdout,
+                          'remote exit status, shell/TERM selection or final output was lost')
+                    finish_sessions({daemon.pid}, server, observed)
+                # Old terminal profiles are rejected before a shell is launched.
+                old = subprocess.run(['/usr/bin/ssh', '-n', '-T', '-F', str(config),
+                                      '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
+                                      'phantom-session-fixture', 'exec ' + shlex.quote(str(executable)) +
+                                      ' --terminal-profile phantom-mosh/terminal/draft-01'],
+                                     capture_output=True, timeout=15)
+                check(old.returncode != 0 and not old.stdout, 'old terminal profile accepted')
                 # Empty SSP ACK frames must not feed terminal echo acknowledgements.
                 idle_args = [idle_driver, str(executable), str(config), 'phantom-session-fixture']
                 client = subprocess.Popen(idle_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -207,7 +235,7 @@ LogLevel ERROR
                 finish_sessions({daemon.pid}, server, observed, timeout=10)
                 # A successfully authenticated SSH startup whose UDP peer never
                 # confirms must expire and clean the already-owned shell.
-                command = 'exec ' + shlex.quote(str(executable)) + ' --terminal-profile phantom-mosh/terminal/draft-01 --startup-ms 1000'
+                command = 'exec ' + shlex.quote(str(executable)) + ' --terminal-profile phantom-mosh/terminal/draft-02 --startup-ms 1000'
                 startup = subprocess.run(['/usr/bin/ssh', '-n', '-T', '-F', str(config),
                                           '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
                                           'phantom-session-fixture', command], capture_output=True, timeout=15)
@@ -260,7 +288,7 @@ LogLevel ERROR
                     time.sleep(0.2)
                     client.send_signal(signal.SIGTERM)
                     stdout, stderr = client.communicate(timeout=10)
-                    check(client.returncode == 0, 'client signal shutdown failed')
+                    check(client.returncode == 128 + signal.SIGTERM, 'client signal shutdown failed')
                     check(termios.tcgetattr(slave) == original, 'signal failed to restore original terminal mode')
                     finish_sessions({daemon.pid}, server, observed)
                     # Cancellation while SSH is waiting for its protocol banner

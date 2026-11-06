@@ -63,3 +63,20 @@ add_test(NAME phantom-terminal-ssh
     $<TARGET_FILE:phantom-mosh-server> $<TARGET_FILE:phantom-mosh-probe>
     $<TARGET_FILE:phantom_terminal_idle_driver> ${PHANTOM_SSH_TEST_ARGUMENTS})
 set_tests_properties(phantom-terminal-ssh PROPERTIES TIMEOUT 60 SKIP_RETURN_CODE 77)
+
+# Explicitly opt in: do not change the inherited Mosh install or install tests.
+option(PHANTOM_INSTALL_TERMINAL "Install the experimental Linux terminal pair" OFF)
+if(PHANTOM_INSTALL_TERMINAL)
+  include(GNUInstallDirs)
+  install(TARGETS phantom-mosh-terminal phantom-mosh-terminal-server
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT phantom-terminal)
+endif()
+add_executable(phantom_terminal_state_test ../../tests/phantom/terminal_state_test.cc)
+target_link_libraries(phantom_terminal_state_test PRIVATE phantom_ssp)
+target_compile_options(phantom_terminal_state_test PRIVATE -Wall -Wextra -Wpedantic -Werror)
+add_test(NAME phantom-terminal-state COMMAND phantom_terminal_state_test)
+set_tests_properties(phantom-terminal-state PROPERTIES TIMEOUT 15)
+add_test(NAME phantom-terminal-state-reference
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/phantom/terminal_state_reference.py
+    $<TARGET_FILE:phantom_terminal_state_test>)
+set_tests_properties(phantom-terminal-state-reference PROPERTIES TIMEOUT 15)
