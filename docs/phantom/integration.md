@@ -1,64 +1,68 @@
-# Integration roadmap
+# Integration status and roadmap
 
-The record layer is implemented separately from the inherited Mosh runtime.
-The following work is needed for a usable Phantom Mosh terminal.
+The default branch includes the record layer, SSH startup, session channel, SSP
+adapter, experimental Linux terminal, recovery tests and pinned loopback evidence
+integrated in [PR #9](https://github.com/sednalabs/phantom-mosh/pull/9).
+The inherited Mosh executables continue to use v2. The terminal is a separate,
+explicit build/install opt-in, not a production release.
 
-## Authenticated bootstrap
+## Implemented
 
-The [startup codec and POSIX handoff reader](startup.md) now implement bounded
-framing, exact profile/role selection, secret-buffer cleanup and a total read
-deadline. Process tests hand a bootstrap through a pipe or stream socket and
-exchange encrypted UDP records with an independent test peer.
+- **Authenticated bootstrap:** the [SSH supervisor](ssh-startup.md) requires
+  existing host trust, exact application-profile selection, bounded output,
+  EOF and successful SSH exit. Address-bound offers avoid guessing an SSH
+  alias's UDP address. There is no protocol downgrade or UDP-over-SSH tunnel.
+- **Remote ownership:** [session owners](remote-session.md) detach before key
+  generation and expire unconfirmed startups. The terminal additionally owns
+  its PTY and ordinary descendants, with bounded userspace cleanup waits.
+- **Transport and SSP:** one [session channel](session-channel.md) owns sockets,
+  packet counters, path validation and retry timers. The [SSP adapter](ssp.md)
+  reuses inherited state synchronization and accounts for the full 1200-byte
+  UDP payload budget. It preserves crypto/replay state during path recovery.
+- **Terminal:** the [Linux client/server](terminal-integration.md) exchange
+  terminal state and input, report authenticated remote exit status, and restore
+  local terminal modes. Both select terminal application profile draft-02.
+- **Qualification:** tests cover component boundaries, real OpenSSH/PTYs,
+  logical-time outages and [real-clock loopback remapping](terminal-recovery.md).
+  A [matched integrated pilot](integrated-loopback-pilot.md) retains metadata-only
+  observations, build pins and capture-health evidence.
 
-The [Linux SSH supervisor](ssh-startup.md) now implements host-trust enforcement,
-quoted remote command construction, bounded startup output, successful-exit
-validation, cancellation and local process-group cleanup. Tests include a real
-isolated SSH server and an independently implemented encrypted UDP responder.
+## Remaining work
 
-Next, add production launcher/client/server entry points and a remote session
-owner with a startup-confirmation deadline. A failed local SSH attempt must not
-leave an unconfirmed remote session alive indefinitely. Bind UDP routing to the
-SSH-authenticated endpoint, including configuration aliases and proxies. Keep v2
-compatibility explicit and test it against a pinned upstream build.
+### Security and secret lifetime
 
-Keep the secret out of command arguments, environment variables and logs. Pass
-only the dedicated descriptor to the child, close unused pipe ends, and erase
-launcher-owned copies. The handoff reader does not replace those responsibilities.
+The custom cryptographic composition still needs independent review. Provider
+and allocation fault injection, process/secret-lifetime auditing and broader
+failure testing remain open. Symmetric key updates do not provide
+post-compromise recovery. Restart, cloning or rollback must never reuse a
+bootstrap with reset counters. See the [security notes](security.md).
 
-## SSP and socket integration
+### Terminal usability and platforms
 
-Connect one `Session` to each client/server pair while preserving Mosh's state
-synchronization and prediction. Keep the new records separate from the legacy
-OCB framing, and deduct the 32-byte record overhead plus timestamp and SSP
-overhead from the selected datagram budget.
+Account/login-shell and locale selection, local prediction, escape controls and
+distribution packaging remain incomplete. Linux process APIs and `C.UTF-8` are
+required by the experimental terminal. A native Windows client needs terminal,
+process, networking and secret-handling work beyond compiling the record layer.
+Packaging must not silently replace upstream Mosh executables.
 
-Schedule idle `tick` calls for key retirement and timely acknowledgement-carrying
-traffic. Treat hard-limit closure as requiring fresh authentication. Never reset
-packet numbers after failed sends, port changes or disconnection.
+### Network acceptance
 
-Only an authenticated newest record may update the peer address. Reordered
-payloads must not move it back to an old path. Add path validation,
-anti-amplification and admission limits without breaking state convergence.
+The existing recovery tests use loopback relays, not kernel NAT or a physical
+router. WAN conditions, real link changes, path-MTU behavior, congestion and
+cross-address-family migration need separate work. The client's server endpoint
+is fixed; server-address migration is not implemented. Preserve computed remote
+output, exact input delivery and cleanup checks when adding new network fixtures.
 
-## End-to-end tests and platforms
+### Traffic analysis and release claims
 
-Test real SSH/PTY sessions through a controllable UDP relay with loss, duplication,
-delay, reordering, migration and blackout/resume. Check remote terminal
-convergence and remote-confirmed keystroke latency, not only local prediction.
-Include simultaneous updates, lost acknowledgements, output across key limits,
-rebinding races, malformed bootstrap and explicit protocol mismatches.
+The retained pilots are small, pinned experiments, not classification studies.
+Run the [matched measurement campaign](matched-measurement.md) and the separate
+[held-out detector evaluation](evaluation.md) before making privacy claims.
+Freeze builds, observers, thresholds and whole-session holdouts before scoring;
+report failed captures, exclusions and negative results. Equal packet counts do
+not establish equivalent traffic distributions.
 
-Native Windows support requires terminal, process, event, networking and secret
-handling work beyond compiling the record layer. Packaging must not silently
-replace upstream executables.
-
-## Evaluation and release readiness
-
-Collect actual integrated traffic for the comparisons in the
-[evaluation guide](evaluation.md). Freeze builds, observer capabilities,
-detectors, thresholds and whole-session holdouts before scoring. Label synthetic
-trace changes as ablations rather than implemented protocol captures.
-
-Evaluate padding or idle-scheduling changes only when measurements justify them.
-Independent security review, end-to-end acceptance and reproducible traffic
-measurements are required before making corresponding release claims.
+Independent security review, broader end-to-end acceptance and reproducible
+measurements are required before making corresponding production or privacy
+claims. Check CI for the exact commit being considered; historical results are
+not a guarantee for a later checkout.

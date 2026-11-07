@@ -1,6 +1,6 @@
 # Integrated draft-02 and recovery loopback pilot
 
-Ops w18887. This is the next matched descriptive collection after the
+This dated report describes the matched collection following the
 [ACK-loop before/after pilot](loopback-pilot.md), not a detector or privacy result.
 The new corpus is retained at
 `evaluation/results/loopback-pilot-2026-11-06-integrated/`.

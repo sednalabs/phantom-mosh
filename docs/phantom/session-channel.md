@@ -2,9 +2,9 @@
 
 `SessionChannel` connects the session-control state machine to an owned UDP
 socket. Both the diagnostic probe and detached control server use this loop.
-It is the datagram boundary for subsequent SSP integration, **not an SSP
-implementation or a terminal client**. Records, key derivation and the session
-control wire format are unchanged.
+The [SSP adapter](ssp.md) and [terminal](terminal-integration.md) also use this
+datagram boundary; the channel itself does not implement SSP or a terminal.
+Records, key derivation and the session control wire format are unchanged.
 
 ## Ownership and interface
 
@@ -60,7 +60,7 @@ Only connection and close control messages are retried. The default interval is
 A late service call sends at most one retry, not a catch-up burst.
 Incoming control replies reset that retry interval but cannot renew an absolute
 connection deadline. Local key-retirement ticks produce no idle network traffic.
-An eventual SSP sender must still schedule ACK-bearing application records;
+The SSP sender schedules ACK-bearing application records;
 this channel does not manufacture empty DATA as a fake application ACK.
 
 Initial client connection attempts expire after 10 seconds by default. Once
@@ -74,8 +74,8 @@ address family. Application sends pause until the new return path is confirmed.
 The old local socket closes at replacement; the server retains its old validated
 route until confirmation. This is not a lossless dual-path migration promise.
 A second local network change can replace an unconfirmed recovery route without
-restarting cryptographic state. Cross-family migration and reliable application
-recovery remain separate work.
+restarting cryptographic state. Cross-family migration remains unsupported.
+The SSP layer provides reliable application-state recovery above this channel.
 
 `start_close` begins an authenticated close, with a three-second client deadline.
 Calling it repeatedly does not extend the deadline. `ChannelEnd::peer_closed`
@@ -103,6 +103,7 @@ executable path. Missing tools are a visible local skip; with
 `PHANTOM_REQUIRE_SSH_TESTS=ON`, missing tools fail. Test registration is not proof
 that it ran: inspect the corresponding CTest results for the tested revision.
 
-The next SSP change must define and test the timestamp/RTT interface, fragment
-budget and connection abstraction, then exercise real terminal state convergence.
-Do not replace those tests with a successful arbitrary-payload echo.
+The [SSP adapter](ssp.md) defines and tests the timestamp/RTT interface, fragment
+budget and connection abstraction. Its convergence tests and the separate real
+SSH/PTY tests exercise terminal behavior above this channel. A successful
+arbitrary-payload echo alone does not establish terminal acceptance.

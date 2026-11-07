@@ -23,7 +23,7 @@ introduced. The channel remains the sole owner of sockets and record counters.
 
 The connection backend supplies SSP's clock as well as its payload budget. This
 keeps all state timestamps in the same clock domain, including logical-time tests
-and suspend-inclusive `session_time_ms()` in a future Linux frontend. Stock Mosh
+and suspend-inclusive `session_time_ms()` in the Linux terminal frontend. Stock Mosh
 continues to use its existing frozen timestamp source.
 
 A retryable local send failure is recorded as loss, not delivery or an ACK. SSP
@@ -87,16 +87,37 @@ obfuscation or measured fingerprint resistance is added by this adapter.
 
 Prepare the inherited libraries from the same source checkout, then enable the
 adapter in the component build. Linux development prerequisites include OpenSSL,
-protobuf/protoc, zlib, terminfo/ncurses, Autotools, CMake and a C++17 compiler.
+protobuf/protoc, zlib, terminfo/ncurses, Autotools, pkg-config, Make, CMake and a
+C++17 compiler. Run from the repository root. Both terminal endpoints require
+Linux/glibc 2.34+, Linux 5.9+ process APIs, readable procfs and `C.UTF-8`;
+OpenSSH 8.7+ and existing host trust are needed for startup. See
+[terminal requirements](terminal-integration.md) for the process-ownership limits.
+
+For example, on Ubuntu 24.04, the dependency packages used by the SSP CI are:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y autoconf automake make cmake g++ pkg-config \
+  libssl-dev libncurses-dev libprotobuf-dev protobuf-compiler zlib1g-dev \
+  python3 openssh-client openssh-server
+```
+
+Installing a system SSH server may enable a service according to your package
+manager's policy. The tests launch their own isolated loopback sshd with
+disposable keys; they do not require accepting external SSH connections. A
+container may also need the sshd privilege-separation directory `/run/sshd`
+prepared by its administrator. Use `PHANTOM_REQUIRE_SSH_TESTS=ON` below to
+require the real SSH tests rather than silently treating a skip as coverage.
 
 ```sh
 ./autogen.sh
 ./configure --with-crypto-library=openssl --without-utempter
 make -j2
 cmake -S src/phantom -B build/ssp \
+  -DCMAKE_BUILD_TYPE=Release -DPHANTOM_REQUIRE_SSH_TESTS=ON \
   -DPHANTOM_BUILD_SSP=ON -DPHANTOM_MOSH_BUILD_DIR="$PWD"
 cmake --build build/ssp --parallel 2
-ctest --test-dir build/ssp --output-on-failure
+(cd build/ssp && ctest --output-on-failure)
 ```
 
 Do not supply archives from another revision. When enabling sanitizers, rebuild

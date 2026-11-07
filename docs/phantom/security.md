@@ -1,7 +1,9 @@
 # Security considerations
 
 The record protocol is experimental and has not received independent
-cryptographic review. The existing Mosh executables do not use it yet.
+cryptographic review. The inherited Mosh executables still use upstream v2;
+only the separate opt-in Phantom executables use the new protocol. Do not treat
+this experimental fork as a production-security replacement for upstream Mosh.
 
 ## Implemented protections
 
@@ -19,6 +21,13 @@ The [protocol specification](protocol-draft-01.md) defines these mechanisms and
 the caller's responsibilities. Tests exercise the implementation; they do not
 constitute a proof of the protocol's security.
 
+The integrated SSH supervisor requires existing host trust, exact profile
+selection, bounded output, EOF and a successful SSH exit before accepting
+bootstrap material. The session channel separately validates UDP return paths
+before activation or migration, limits control replies to the size of their
+authenticated requests, and expires unconfirmed startup owners. See
+[SSH startup](ssh-startup.md) and [session control](remote-session.md).
+
 ## Limitations
 
 **No post-compromise recovery.** A compromised traffic secret or precomputed
@@ -34,16 +43,30 @@ reset counters. Clone detection and checkpoint restoration are not implemented.
 A production integration needs fresh authenticated setup on restart and a
 reviewed secret-handling and crash-dump policy.
 
-**No measured fingerprint resistance.** Packet direction, lengths, timing,
+**No established fingerprint resistance.** Small, pinned
+[loopback traffic measurements](integrated-loopback-pilot.md) show visible
+packet-size/count/rate differences; they are not classifier or privacy results.
+Packet direction, lengths, timing,
 bootstrap correlation and migration continuity remain observable. Removing
 explicit fields does not make traffic indistinguishable from other UDP protocols.
 There is no cover traffic, timing jitter or protocol impersonation.
 
-**No flood or path-validation guarantee.** Bounded decryption work does not solve
-flooding. Address validation, anti-amplification, admission limits and scheduling
-belong to the transport integration. Verification-budget exhaustion closes the
-session; an attacker can cause that loss of availability. Do not reflect local
-exception details back to unauthenticated senders.
+**No flood immunity or endpoint authenticity from UDP alone.** The integrated
+return-path proof establishes reachability, not protection against an on-path
+relay or a compromised endpoint. Bounded decryption, candidate-path and reply
+work do not solve flooding. Verification-budget exhaustion closes the session;
+an attacker can cause that loss of availability. The record library alone does
+not validate routes. Do not reflect local exception details to unauthenticated
+senders.
+
+**No hostile-process containment.** The terminal server owns its PTY and ordinary
+descendants using Linux subreaper/pidfd support, but is not a sandbox or cgroup
+boundary. Userspace deadlines cannot force a kernel-uninterruptible process to
+finish. The authenticated server, shell, SSH configuration and local environment
+remain trusted. Run experiments in accounts and networks you control. Confirmed
+terminals have no idle expiry by default; a broken client or unavailable server
+can require manual cleanup. Closing the local client while the network is down
+is not proof that the remote process exited.
 
 ## Review priorities
 
@@ -53,9 +76,11 @@ primitive conformance, not the security of this custom composition. A maintained
 OpenSSL implementation is a dependency, including its timing behavior.
 
 Further work includes provider/allocation failure injection, state-machine
-verification, secret-lifetime review and end-to-end SSH/terminal testing. The
-loopback UDP test checks admission and rebinding rules, not complete terminal
-integration. A simulated long outage is not a long-running deployment.
+verification, process/secret-lifetime review and broader end-to-end failure and
+real-network testing. The source review in [the dated review report](protocol-review-2026-11-05.md)
+is AI-assisted, not independent cryptographic certification. Real SSH/PTY and
+loopback recovery tests now exist, but do not establish kernel-NAT, WAN or
+physical-link acceptance. A simulated long outage is not a long-running deployment.
 
 Do not attach live keys, terminal contents or private captures to public reports.
-Check the repository's Security page for available reporting options.
+Follow [SECURITY.md](../../SECURITY.md) for reporting guidance.
