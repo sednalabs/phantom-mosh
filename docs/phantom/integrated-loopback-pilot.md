@@ -1,5 +1,11 @@
 # Integrated draft-02 and recovery loopback pilot
 
+**Historical measurement, 6 November 2026.** The source, binary, collector and
+corpus pins below identify the experiment. Its results remain unchanged when
+documentation or the default branch advances. See [evaluation status](evaluation.md)
+for the current evidence boundaries and [terminal setup](terminal-integration.md)
+for current usage.
+
 This dated report describes the matched collection following the
 [ACK-loop before/after pilot](loopback-pilot.md), not a detector or privacy result.
 The new corpus is retained at

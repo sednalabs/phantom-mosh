@@ -1,5 +1,8 @@
 # Experimental remote-session control
 
+[Documentation index](README.md) · [Application channel](session-channel.md) ·
+[Real terminal setup](terminal-integration.md)
+
 The Linux `phantom-mosh-server` executable owns an encrypted UDP session after
 SSH exits. `phantom-mosh-probe` authenticates startup through OpenSSH, confirms
 UDP reachability and closes the session. Neither executable starts a shell or
@@ -7,6 +10,13 @@ PTY, and neither is a replacement for the existing Mosh client. The separate
 [terminal executables](terminal-integration.md) use the integrated [SSP adapter](ssp.md).
 Application data is exposed by the library API but is discarded
 by the control-only server executable, not acknowledged as terminal delivery.
+
+The state-machine contract is in
+[`remote_session.h`](../../src/phantom/remote_session.h); the diagnostic CLI
+implementations are [`session_probe.cc`](../../src/phantom/session_probe.cc)
+and [`session_server.cc`](../../src/phantom/session_server.cc). A successful
+probe proves its startup/UDP/close sequence, not terminal rendering or shell
+execution.
 
 The server and diagnostic probe share the [bounded datagram channel](session-channel.md).
 It owns socket readiness, control retry deadlines and application-data batches,
@@ -33,6 +43,13 @@ not automatically enroll unknown keys or run interactive password prompts.
 It prints only its final status, not a bootstrap key. It deliberately closes
 the session after confirmation instead of leaving an unattended daemon running.
 The inherited `mosh`, `mosh-client` and `mosh-server` remain unchanged.
+
+The probe accepts `--server`, `--ssh-config`, `--udp-host` and `--udp-port`, each
+with a separate value, followed by one SSH destination. It does not accept shell
+or terminal options. The server binds an OS-selected UDP port; `--udp-port`
+changes the probe's destination only. Follow the
+[terminal network requirements](terminal-integration.md#build-and-run) when the
+advertised server-local endpoint is not directly reachable.
 
 ## Address-bound startup
 
@@ -127,6 +144,11 @@ owner. This control protocol does not carry terminal-exit status; the separate
 terminal draft-02 application carries that status in reliable SSP state. Neither
 layer supports restoration after reboot.
 
+Session recovery means retaining the original in-memory record and control
+state across network loss. There is no persistent session store or reconnect
+credential. If an owner exits, create a new authenticated session rather than
+reusing an earlier offer or resetting its packet counters.
+
 ## Scheduling, tests and limits
 
 The Linux event loop uses CLOCK_BOOTTIME, including suspension, and checks time
@@ -146,6 +168,8 @@ SSH cryptographic authentication. Existing isolated OpenSSH tests remain
 required in CI, but do not by themselves establish terminal acceptance.
 
 The challenge protocol adds startup/migration round trips and observable traffic
-patterns. It is not fingerprint-resistance evidence. Independent protocol review,
-full OpenSSH-to-terminal acceptance and statistical traffic evaluation remain
-necessary before corresponding production or privacy claims.
+patterns. It is not fingerprint-resistance evidence. The integrated terminal has
+separate [SSH/PTY tests](terminal-integration.md#verification-and-remaining-work)
+and [loopback recovery qualification](terminal-recovery.md). Independent protocol
+review, broader real-network terminal acceptance and statistical traffic
+evaluation remain necessary before corresponding production or privacy claims.

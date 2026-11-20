@@ -1,5 +1,13 @@
 # Real-clock terminal recovery qualification
 
+[Documentation index](README.md) · [Current terminal guide](terminal-integration.md) ·
+[SSP build guide](ssp.md#build-and-test)
+
+**Historical qualification report.** The revision pins, test counts and
+measurements below describe the original November 2026 integration work.
+The recovery implementation and test are present on the default branch;
+later source changes and CI runs require their own recorded results.
+
 This report preserves the original draft-01 recovery qualification and the
 later draft-02 integration below. The initial qualification combines terminal PR #7 at
 `ebd798fd58cca6540a3c6da9869f7124e194ac7c` with PR #6's recovery fix at
@@ -14,6 +22,11 @@ isolated OpenSSH with disposable keys and pinned host trust. Its IPv4 loopback
 relay has a stable client-facing socket and a replaceable server-facing socket.
 Both replacements must allocate genuinely different UDP source ports; the
 client's source endpoint and destination stay unchanged.
+
+The current executable fixture is
+[`terminal_recovery_test.py`](../../tests/phantom/terminal_recovery_test.py),
+registered by [`ssp.cmake`](../../src/phantom/ssp.cmake). Use the exact checkout
+that supplies both binaries and this fixture when reproducing the test.
 
 The test changes the relay source port during active input, then changes it again
 during a real two-second bidirectional blackout. Both recovery phases include
@@ -61,6 +74,11 @@ exercise kernel conntrack, a physical router, a WAN, path-MTU change, realistic
 background traffic or cross-address-family migration. #6 retains separate
 logical-clock IPv4/IPv6 coverage, including its logical 180-day outage. The
 real two-second blackout here is not evidence of a 180-day real outage.
+
+Both endpoint processes remain alive throughout these scenarios. Neither this
+fixture nor the logical-time test demonstrates restart, reboot, snapshot
+restore or detach/reattach support. See the current
+[session-lifetime rules](terminal-integration.md#session-lifetime-and-recovery).
 
 No kernel NAT or WAN experiment was run for this report, and no host firewall,
 route or namespace settings were changed. A later owned-router experiment needs

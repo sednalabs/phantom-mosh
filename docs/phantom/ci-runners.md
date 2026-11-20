@@ -1,9 +1,13 @@
 # CI runner policy
 
+[Documentation index](README.md) · [Contributing](../../CONTRIBUTING.md)
+
 Workflows use only the reviewed standard GitHub-hosted Linux and macOS labels:
 `ubuntu-latest`, `ubuntu-22.04`, `ubuntu-24.04`, `macos-15`, and `macos-15-intel`.
-GitHub currently provides standard hosted execution free for public repositories;
-larger runners remain billable even when a repository is public.
+These are this repository's explicit allowlist, not every standard runner label
+offered by GitHub. As checked against GitHub's references on 20 November 2026,
+standard hosted execution is free for public repositories; larger runners remain
+billable even when a repository is public.
 
 The inherited macOS release jobs now select standard `macos-15-intel`, not the
 retired `macos-12` image and not a `large`/`xlarge` variant. Their MacPorts installer
@@ -25,6 +29,20 @@ Artifact/cache storage has separate billing rules; short retention and small
 artifacts still matter. Changing repository visibility also changes the billing
 assumptions. No self-hosted or organization-specific runner is required here.
 
+Run the same policy checks locally from the repository root:
+
+```sh
+python3 tools/check_runners.py
+python3 -m unittest discover -s tests/ci -p 'test_*.py' -v
+```
+
+PyYAML is required. The allowlist is defined in
+[`tools/check_runners.py`](../../tools/check_runners.py); the workflows remain
+the source of truth for their actual compiler, runner and dependency choices.
+Runner-policy success establishes neither a successful C++ build nor terminal
+support on every operating system used by inherited Mosh jobs.
+
 References:
-- https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-- https://docs.github.com/en/billing/concepts/product-billing/github-actions
+
+- [GitHub-hosted runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+- [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)

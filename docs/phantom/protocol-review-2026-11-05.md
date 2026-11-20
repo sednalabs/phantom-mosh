@@ -1,5 +1,11 @@
 # Record protocol review, 2026-11-05
 
+**Historical review receipt.** The source revision, test results and open work
+below describe the review performed on this date. They are preserved as evidence,
+not a current whole-repository audit. Consult [security considerations](security.md)
+for current assumptions and [integration status](integration.md) for delivered
+components. Later terminal integration does not widen this review's scope.
+
 ## Scope and disposition
 
 This is an AI-assisted source and regression-test review, not an independent

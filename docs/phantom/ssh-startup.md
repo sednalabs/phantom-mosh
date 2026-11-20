@@ -1,5 +1,8 @@
 # SSH startup supervisor
 
+[Documentation index](README.md) · [Startup codec](startup.md) ·
+[Terminal setup](terminal-integration.md)
+
 The Linux supervisor executes OpenSSH and returns a validated, move-only offer.
 It supplies three explicit entry points:
 
@@ -11,6 +14,12 @@ It supplies three explicit entry points:
 The [control probe](remote-session.md) and [terminal client](terminal-integration.md)
 use the latter two entry points. The supervisor does not itself own the remote
 PTY; the terminal server does. Inherited Mosh executables remain unchanged.
+
+The entry points and local configuration contract are defined in
+[`ssh_startup.h`](../../src/phantom/ssh_startup.h), with process supervision in
+[`ssh_startup.cc`](../../src/phantom/ssh_startup.cc). Startup succeeds only
+after the complete offer, EOF and successful SSH exit have all been checked;
+UDP return-path validation is a subsequent, separate step.
 
 ## Authentication and command construction
 
@@ -82,6 +91,11 @@ child reaper. Detected incompatible dispositions are rejected. Killing a local
 process group is not a sandbox for descendants that deliberately detach, and is
 not a remote-process cancellation guarantee. OS-level uninterruptible operations
 can delay cleanup despite the protocol deadline.
+
+One successful startup creates one new session. The offer is not a reusable
+login token or a persisted reconnection credential. Network recovery uses the
+existing channel in the surviving processes; restarting either endpoint requires
+a fresh authenticated startup and fresh bootstrap material.
 
 Remote owners must independently expire startups that never receive an
 authenticated UDP confirmation. The [control server](remote-session.md) and

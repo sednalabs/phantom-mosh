@@ -7,6 +7,21 @@ No traffic-classification results or independent replication are available yet.
 The executable tools in `evaluation/` validate inputs, dataset partitions and
 fixed-threshold scores. They are not a trained detector or a complete experiment.
 
+## Available evidence
+
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Synthetic evaluator tests | Input validation, accounting and partition/score safeguards for their fixtures | Observed network behaviour or classifier performance |
+| [ACK-loop pilot](loopback-pilot.md) | A revision-pinned before/after regression measurement | An independent privacy holdout or isolated header-protection benefit |
+| [Integrated terminal pilot](integrated-loopback-pilot.md) | Descriptive counts and payload rates for six matched pairs on a userspace loopback relay | WAN performance, identification resistance, anonymity or realistic background comparison |
+| [Recovery qualification](terminal-recovery.md) | The documented process and session outcomes under its controlled impairments | A passive traffic corpus or production-network acceptance |
+
+The checked-in [evaluation contract](../../evaluation/contract.json) still says
+`not_measured`: its classification/linkage measurements and acceptance thresholds
+are unset, and independent review and replication are not performed. This does
+not mean no measurements exist; it means the descriptive pilots have not satisfied
+that separate statistical contract.
+
 ## Observer inputs and ground truth
 
 The initial passive feature extractor accepts only `time_ms`,
@@ -73,5 +88,11 @@ measured benefit rather than assumptions about how random traffic ought to look.
 
 The [matched measurement protocol](matched-measurement.md) and
 `evaluation/compare.py` provide strict paired metadata summaries, pinned artifact
-provenance and synthetic regression tests. Actual terminal capture remains a
-separate prerequisite. These summaries are not classifier or privacy results.
+provenance and synthetic regression tests. New campaigns require actual terminal
+capture with their own source and binary pins; the retained historical corpora are not measurements of the current branch.
+These summaries are not classifier or privacy results.
+
+The [roadmap](integration.md) proposes comparing a future QUIC DATAGRAM backend
+with the custom transport. No such backend or comparison is included in this
+evidence. Adding a candidate requires an explicit experiment and schema change;
+do not relabel an existing corpus as a QUIC or current-build result.

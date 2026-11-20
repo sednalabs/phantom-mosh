@@ -4,6 +4,11 @@ Keep pull requests focused and include tests for changed behavior. The record
 layer is experimental; its protocol specification and test vectors must stay in
 step with the implementation.
 
+The repository's default development branch is `master`. Target that branch
+for current changes. Retired stacked pull requests and dated reports record
+earlier work; use the current source and [documentation index](docs/phantom/README.md)
+when deciding what still needs implementation.
+
 ## Build and test
 
 Follow the [README](README.md) for the standalone component build, or the
@@ -11,6 +16,12 @@ Follow the [README](README.md) for the standalone component build, or the
 and a same-checkout inherited-library build. Run commands from the repository
 root. Enable `PHANTOM_REQUIRE_SSH_TESTS=ON` when claiming real SSH coverage;
 report missing prerequisites and skipped tests explicitly.
+
+Build the component, SSP and inherited-v2 configurations separately: a successful
+standalone record build does not compile or test the terminal. The SSP build
+includes the component tests as well as its own integration tests. Use `ctest -N`
+inside the selected build directory to inspect that configuration's registered
+tests, then inspect the actual result for skipped or failed tests.
 
 For standalone Clang AddressSanitizer and UndefinedBehaviorSanitizer:
 
@@ -46,6 +57,13 @@ Update current guidance when implementation lands, but preserve historical
 measurement data, source/binary hashes and the scope of dated reports. Never
 present past CI or measurements as a result for a new commit.
 
+Keep runnable setup instructions in the [terminal guide](docs/phantom/terminal-integration.md)
+and [SSP build guide](docs/phantom/ssp.md). Link detailed protocol and ownership
+claims to their source modules. Describe roadmap items as proposed until a
+reviewed implementation and corresponding evidence have landed. In particular,
+the transport comparison in the [architecture guide](docs/phantom/architecture.md)
+does not mean that a QUIC backend or a transport-selection CLI already exists.
+
 Useful repository checks, without compiling C++, include the commands below.
 The evaluation tests use the Python standard library. The runner-policy check
 and its tests additionally require PyYAML (the `python3-yaml` package on Ubuntu).
@@ -59,6 +77,12 @@ git diff --check
 
 Report what ran, what passed and what was skipped. For suspected vulnerabilities,
 follow [SECURITY.md](SECURITY.md) rather than publishing sensitive details.
+
+For a documentation-only change, check relative links and anchors, balanced
+fences, shell syntax, and every affected option/build path against the source.
+Record the exact tested commit for any runtime or hosted-CI result. A build
+description is not evidence that the build ran in the documentation editor's
+environment.
 
 ## Protocol and evaluation changes
 

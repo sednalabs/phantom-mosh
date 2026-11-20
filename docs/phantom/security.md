@@ -4,6 +4,20 @@ The record protocol is experimental and has not received independent
 cryptographic review. The inherited Mosh executables still use upstream v2;
 only the separate opt-in Phantom executables use the new protocol. Do not treat
 this experimental fork as a production-security replacement for upstream Mosh.
+The [architecture guide](architecture.md) describes the components and their
+separate responsibilities.
+
+## Trust and assurance boundaries
+
+| Boundary | What it provides | What remains outside that claim |
+| --- | --- | --- |
+| SSH startup | Existing host trust and authenticated selection of the exact application profile and fresh bootstrap | A trusted local machine, remote account, SSH configuration and server binary |
+| Record layer | Confidentiality and authentication using the specified custom composition; replay and key-lifetime controls | Independent proof of that composition, traffic anonymity or recovery from a compromised endpoint |
+| Session channel | Bounded control handling, UDP return-path validation and recovery while the owner remains alive | Flood immunity, durable process restoration or a guarantee that an unreachable remote shell has exited |
+| SSP and terminal | State synchronisation, PTY integration and the specific regression coverage described in their guides | A complete security audit of inherited parsers, compression, terminal handling and process management |
+
+Reviewing one row does not establish the security of the others. In particular,
+record-layer test results do not certify the entire remote terminal.
 
 ## Implemented protections
 
@@ -37,11 +51,15 @@ erasing the bootstrap, master, previous keys and their copies at both endpoints.
 Logs, environment variables, crash dumps, swap and snapshots can retain secrets;
 explicit memory cleansing does not prove that every system-level copy is gone.
 
-**No session restoration.** The process must retain its state across network
-outages. Restart, process cloning and VM rollback must not reuse a bootstrap with
-reset counters. Clone detection and checkpoint restoration are not implemented.
-A production integration needs fresh authenticated setup on restart and a
-reviewed secret-handling and crash-dump policy.
+**No session restoration or clone protection.** Recovery from packet loss,
+network changes and suspension assumes that the existing owner and its complete
+state survive. A process restart requires a fresh authenticated bootstrap. Never
+continue a live session from duplicated process memory, a cloned VM or a restored
+checkpoint, even if its counters appear intact. Noncopyable C++ ownership does
+not prevent operating-system process copies or VM snapshots; clone detection and
+checkpoint restoration are not implemented. The server detaches before creating
+its session material, but that does not make later cloning safe. A production
+integration would also need a reviewed secret-handling and crash-dump policy.
 
 **No established fingerprint resistance.** Small, pinned
 [loopback traffic measurements](integrated-loopback-pilot.md) show visible
@@ -75,12 +93,19 @@ rules and usage limits need independent protocol review. RFC vectors check
 primitive conformance, not the security of this custom composition. A maintained
 OpenSSL implementation is a dependency, including its timing behavior.
 
-Further work includes provider/allocation failure injection, state-machine
-verification, process/secret-lifetime review and broader end-to-end failure and
-real-network testing. The source review in [the dated review report](protocol-review-2026-11-05.md)
-is AI-assisted, not independent cryptographic certification. Real SSH/PTY and
-loopback recovery tests now exist, but do not establish kernel-NAT, WAN or
-physical-link acceptance. A simulated long outage is not a long-running deployment.
+Acceptance work still includes independent composition review, reproducible
+provider/allocation-failure coverage, state-machine analysis, process and secret
+lifetime review, and broader end-to-end failure and real-network testing. The
+[source review dated 5 November 2026](protocol-review-2026-11-05.md) is AI-assisted
+and revision-bound. Additional local review or successful experiments do not
+become maintained repository coverage without an inspectable implementation and
+validation receipt. None substitutes for independent cryptographic review.
+
+Real SSH/PTY and loopback recovery tests exist, but do not establish kernel-NAT,
+WAN or physical-link acceptance. A simulated long outage is not a long-running
+deployment. The proposed transport-independent architecture and QUIC DATAGRAM
+comparison in the [roadmap](integration.md) are research directions, not an
+implemented replacement or a transfer of QUIC's security analysis to this protocol.
 
 Do not attach live keys, terminal contents or private captures to public reports.
 Follow [SECURITY.md](../../SECURITY.md) for reporting guidance.

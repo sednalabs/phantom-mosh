@@ -1,6 +1,14 @@
 > This is the inherited upstream Mosh README. Its commands, packages, features
 > and badge describe Mosh v2, not the experimental Phantom terminal. Start with
 > the [Phantom Mosh README](../README.md) for this fork's current status and builds.
+>
+> The body below is preserved from the fork's upstream baseline,
+> [`decd9b705eb81626f694335b8d5940538beb06da`](https://github.com/mobile-shell/mosh/blob/decd9b705eb81626f694335b8d5940538beb06da/README.md).
+> Its historical benchmark figures and platform/package descriptions have not
+> been revalidated for Phantom. Local prediction, the `mosh` wrapper's flags,
+> its UDP port-range defaults and `MOSH_KEY` handoff belong to inherited v2.
+> Use the [Phantom terminal guide](phantom/terminal-integration.md) and
+> [documentation index](phantom/README.md) for the separate experimental frontend.
 
 [![ci](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml/badge.svg)](https://github.com/mobile-shell/mosh/actions/workflows/ci.yml)
 
