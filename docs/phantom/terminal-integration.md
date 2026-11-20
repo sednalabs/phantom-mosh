@@ -1,5 +1,8 @@
 # Experimental SSH-to-PTY terminal
 
+[Documentation index](README.md) · [Build guide](ssp.md#build-and-test) ·
+[Architecture](architecture.md)
+
 The terminal, recovery tests and matched traffic measurements are integrated
 on the default branch. Historical measurement reports pin their tested revisions;
 they are not measurements of every later checkout.
@@ -9,6 +12,12 @@ The Linux SSP opt-in now builds `phantom-mosh-terminal` and
 not a production release, an upstream Mosh replacement, or a fingerprint claim.
 The original Mosh binaries still use v2 and the Phantom probe/server remain
 control-only. Installation remains off by default; an explicit CMake option installs only the two experimental binaries.
+
+This guide describes the current Linux frontend in
+[`terminal_client.cc`](../../src/phantom/terminal_client.cc) and
+[`terminal_server.cc`](../../src/phantom/terminal_server.cc). The inherited
+`man/mosh*.1` pages document Mosh v2; they are not a CLI reference for these
+executables.
 
 ## Build and run
 
@@ -64,6 +73,50 @@ shell. Local cancellation returns `128 + signal`. Missing remote status, failed
 startup, or failed transport completion returns a nonzero error, never an implied
 remote success. Exit 1 can therefore mean either a remote command failure or a
 local transport error, like other terminal tools.
+
+### Client options
+
+Options take a separate value. Exactly one SSH destination is required.
+
+| Argument | Meaning and default |
+| --- | --- |
+| `HOST` | Trusted SSH destination, including `user@host` or a configured alias. |
+| `--server PATH` | Remote terminal server executable; defaults to `phantom-mosh-terminal-server`. Use an absolute path to select a known build. |
+| `--ssh-config FILE` | Trusted OpenSSH configuration; omitted means normal SSH configuration. |
+| `--udp-host IP` | Explicit numeric UDP destination override; otherwise use the authenticated advertised address. |
+| `--udp-port PORT` | UDP destination port override, 1–65535; does not change the server's bind port. |
+| `--shell /PATH` | Absolute remote shell executable, always invoked with `-i`; defaults to `/bin/sh`. |
+| `--term TERM` | Remote terminal type; defaults to `xterm-256color`. |
+
+The client does not expose arbitrary SSH arguments, a server bind-port option,
+a remote command after `HOST`, `--help`, `--version`, or `--protocol=v3`.
+Configure SSH port, identity and aliases in the trusted SSH configuration.
+The terminal server is normally started by this client; invoking it directly
+requires the authenticated startup environment and is not a replacement for
+the client command above.
+
+## Session lifetime and recovery
+
+Once connected, network loss leaves the live session in memory. The channel
+retains its keys, packet counters and replay state while SSP retains terminal
+state and pending input. When the existing client can reach the same server
+endpoint again, it validates the path and resumes state synchronisation.
+Source-port recovery is implemented, including silent NAT remapping; changing
+the server's address or moving between IPv4 and IPv6 is not supported.
+
+There is no default established-terminal idle expiry. A client whose server
+has crashed can therefore continue waiting as though the network were down.
+There is also no detach/reattach command, reconnect token, saved-session file
+or restore-after-reboot feature. Starting the client again creates a new SSH
+bootstrap and a new shell. Do not copy or restore live session state to resume
+an old connection; see [session ownership](security.md).
+
+Exit the remote shell normally when the network is available. If the connection
+cannot recover, send SIGTERM to the local client from another local terminal to
+start its bounded shutdown attempt. This attempts to restore local terminal modes but
+cannot prove remote cleanup across a broken path. Manage any remaining process
+through a separate authenticated connection to the host. The server's cleanup of its ordinary shell descendants
+is described below; it is not a general service manager.
 
 ## Exit-status state and compatibility
 

@@ -1,5 +1,8 @@
 # SSP connection adapter
 
+[Documentation index](README.md) · [Architecture](architecture.md) ·
+[Terminal setup](terminal-integration.md)
+
 The opt-in Linux `SspTransport<MyState, RemoteState>` connects the inherited Mosh
 State Synchronization Protocol to `SessionChannel`. It reuses Mosh's state-diff,
 compression, fragmentation, acknowledgement, retransmission and shutdown engine.
@@ -10,6 +13,13 @@ backend and v2 wire protocol. The control-only Phantom server/probe do not creat
 terminals or select the SSP application. The separate experimental
 [terminal executables](terminal-integration.md) now connect this adapter to a PTY
 and local frontend. Production integration and packaging remain incomplete.
+
+The public template lives in [`ssp_transport.h`](../../src/phantom/ssp_transport.h),
+with its connection and timing implementations in
+[`ssp_connection.cc`](../../src/phantom/ssp_connection.cc) and
+[`ssp_timing.cc`](../../src/phantom/ssp_timing.cc). This is the implemented custom
+transport adapter. A future comparison with QUIC DATAGRAM is a roadmap item;
+there is currently no QUIC backend or runtime transport selector.
 
 ## Ownership and scheduling
 
@@ -88,9 +98,10 @@ obfuscation or measured fingerprint resistance is added by this adapter.
 Prepare the inherited libraries from the same source checkout, then enable the
 adapter in the component build. Linux development prerequisites include OpenSSL,
 protobuf/protoc, zlib, terminfo/ncurses, Autotools, pkg-config, Make, CMake and a
-C++17 compiler. Run from the repository root. Both terminal endpoints require
-Linux/glibc 2.34+, Linux 5.9+ process APIs, readable procfs and `C.UTF-8`;
-OpenSSH 8.7+ and existing host trust are needed for startup. See
+C++17 compiler. Run from the repository root. The client supervisor requires
+Linux/glibc 2.34+ and OpenSSH 8.7+ with existing host trust. The terminal server
+also requires Linux 5.9+ process APIs and readable procfs; both endpoints require
+`C.UTF-8`. See
 [terminal requirements](terminal-integration.md) for the process-ownership limits.
 
 For example, on Ubuntu 24.04, the dependency packages used by the SSP CI are:
@@ -113,6 +124,7 @@ require the real SSH tests rather than silently treating a skip as coverage.
 ./autogen.sh
 ./configure --with-crypto-library=openssl --without-utempter
 make -j2
+make check
 cmake -S src/phantom -B build/ssp \
   -DCMAKE_BUILD_TYPE=Release -DPHANTOM_REQUIRE_SSH_TESTS=ON \
   -DPHANTOM_BUILD_SSP=ON -DPHANTOM_MOSH_BUILD_DIR="$PWD"
@@ -124,6 +136,12 @@ Do not supply archives from another revision. When enabling sanitizers, rebuild
 both the inherited libraries and the adapter with the same instrumentation. The
 SSP CI workflow does this on standard `ubuntu-24.04` runners. The standalone
 record/session build remains usable without the additional SSP dependencies.
+
+`make check` exercises inherited Mosh tests; the CTest invocation exercises the
+Phantom component and integrated terminal tests. Record skips separately in
+both results. CMake checks required archives and generated headers exist, but
+does not prove they were built from the current source revision. Rebuild them
+after switching branches or changing compiler/instrumentation.
 
 The convergence test uses actual `Terminal::Complete` and `UserStream` models,
 protobuf instructions, compression, fragmentation, encrypted records and real
@@ -167,3 +185,8 @@ exercise kernel conntrack, a physical router, WAN timing, packet queue congestio
 path-MTU changes, cross-address-family migration or a launched PTY. A privileged
 network-namespace/router experiment remains separate acceptance work; the relay
 must not be described as empirical kernel-NAT validation.
+
+Recovery assumes that both endpoint processes and their in-memory state survive.
+It does not provide detach/reattach, checkpoint restore or recovery after a
+client/server restart. See [terminal session lifetime](terminal-integration.md#session-lifetime-and-recovery)
+before interpreting a long-outage test as durable session persistence.

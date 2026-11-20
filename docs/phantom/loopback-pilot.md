@@ -1,5 +1,11 @@
 # Real terminal loopback pilot, 2026-11-05
 
+**Historical measurement.** All counts, revisions, binary pins and collection
+limits below belong to these retained before/after corpora. The subsequent
+[integrated terminal pilot](integrated-loopback-pilot.md) is a separate dataset;
+[the current evaluation guide](evaluation.md) describes the outstanding campaign.
+Neither report is a measurement of a later default-branch build.
+
 This is a small descriptive measurement, **not a fingerprint-resistance result**.
 The first collection exposed excessive idle traffic in the experimental Phantom
 terminal. After an ACK-only echo-loop bugfix, an identical second collection

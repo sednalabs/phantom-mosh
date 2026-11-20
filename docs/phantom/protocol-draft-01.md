@@ -3,6 +3,9 @@
 Status: implemented experimental record contract, not a frozen interoperability
 standard. Changes to this draft's byte semantics require a new authenticated
 profile identifier. There is no official Mosh-v3 allocation or QUIC compatibility.
+This document specifies the record layer only; the
+[architecture](architecture.md), [session control](remote-session.md) and
+[terminal application](terminal-integration.md) define the other boundaries.
 
 ## Boundary and authenticated setup
 
@@ -19,7 +22,11 @@ Whitespace, `=`, URL-safe substitutions and nonzero unused bits are rejected.
 The constructor consumes and clears its bootstrap argument, including on failure.
 Callers MUST clear their own encoded/input copies and MUST NOT log secrets.
 Every new session requires fresh entropy. No process restart, cloned process or
-VM rollback may reuse the bootstrap and reset packet numbering.
+VM rollback may reuse the bootstrap and reset packet numbering. A live Session
+MUST have one process owner and MUST NOT be continued from duplicated memory or
+a restored checkpoint. The API's deleted copy/move operations do not enforce
+that operating-system or hypervisor boundary. Network recovery is supported by
+keeping the original owner alive, not by serializing and restoring its keys.
 
 No UDP cipher negotiation or downgrade fallback exists. A launcher must
 fail closed when an explicitly selected profile is unavailable or mismatched.
@@ -78,14 +85,19 @@ second block is used. RFC and independent full-record vectors check this boundar
 Even an empty payload yields eight encrypted epoch/ACK bytes plus a 16-byte tag,
 so a 16-byte sample is always available. Total overhead is 32 bytes. Datagrams
 are bounded to 1200 bytes and payloads to 1168 bytes. This budget includes record
-overhead, but not IP/UDP headers. Future timestamp/SSP adapters must deduct THEIR
-own overhead; they cannot reuse upstream's overhead constants unmodified.
-Fixed sizes and overhead remain observable. No padding or shaping is implied.
+overhead, but not IP/UDP headers. The integrated SSP path deducts a further
+17 bytes of session framing, 21 bytes of encrypted timing data and a 10-byte
+fragment header, leaving at most 1120 bytes of compressed fragment contents.
+See [SSP byte accounting](ssp.md). Other adapters must account for their own
+framing; they cannot reuse upstream's overhead constants unmodified. Fixed sizes
+and overhead remain observable. No padding or shaping is implied.
 
 ## Sending and key updates
 
-A single noncopyable/nonmovable Session owns packet numbering. It consumes a
-number and packet budget BEFORE encryption, including failed attempts. A failed
+A single noncopyable/nonmovable, non-thread-safe Session owns packet numbering.
+The owner must serialize all access and preserve the same state across socket
+replacement. It consumes a number and packet budget BEFORE encryption, including
+failed attempts. A failed
 `sendto` never permits nonce reuse: send a newly sealed record with a new number,
 or retransmit the same immutable bytes if the higher layer explicitly supports
 that. Never modify plaintext while reusing a sealed record's number.
@@ -163,6 +175,8 @@ primitives. `tests/phantom/reference.py` is an independent TEST-ONLY arithmetic
 oracle, never a production crypto provider. State-machine, fault, replay,
 logical-time and UDP-path tests are separate from statistical privacy evaluation.
 
-References: https://www.rfc-editor.org/rfc/rfc5869.html ;
-https://www.rfc-editor.org/rfc/rfc8439.html ;
-https://www.rfc-editor.org/rfc/rfc9001.html .
+References: [RFC 5869](https://www.rfc-editor.org/rfc/rfc5869.html),
+[RFC 8439](https://www.rfc-editor.org/rfc/rfc8439.html) and
+[RFC 9001](https://www.rfc-editor.org/rfc/rfc9001.html). Primitive references do
+not imply that this complete record protocol is a standardized or reviewed suite.
+For current assurance limits, see [security considerations](security.md).

@@ -1,10 +1,18 @@
 # Datagram channel for application event loops
 
+[Documentation index](README.md) · [Remote-session control](remote-session.md) ·
+[SSP adapter](ssp.md)
+
 `SessionChannel` connects the session-control state machine to an owned UDP
 socket. Both the diagnostic probe and detached control server use this loop.
 The [SSP adapter](ssp.md) and [terminal](terminal-integration.md) also use this
 datagram boundary; the channel itself does not implement SSP or a terminal.
 Records, key derivation and the session control wire format are unchanged.
+
+[`session_channel.h`](../../src/phantom/session_channel.h) defines the API and
+policy defaults; [`session_channel.cc`](../../src/phantom/session_channel.cc)
+implements the event loop. This is a single-threaded ownership boundary, not a
+thread-safe shared transport or a durable session store.
 
 ## Ownership and interface
 
@@ -25,6 +33,11 @@ do not advance state. A `service` call uses its supplied time for the bounded
 batch. The caller must sample again after the call; it must not keep passing a
 stale timestamp to avoid expiry. No worker can retire keys while the process is
 suspended, and no session may survive a process restart by resetting counters.
+
+A move-only bootstrap or C++ non-copyable owner does not make external process
+duplication or VM snapshot restoration safe. Keep one live owner per direction
+and establish a fresh session after restart; the library has no state-restore
+API. See [security assumptions](security.md).
 
 ## Data and fairness
 
@@ -76,6 +89,11 @@ route until confirmation. This is not a lossless dual-path migration promise.
 A second local network change can replace an unconfirmed recovery route without
 restarting cryptographic state. Cross-family migration remains unsupported.
 The SSP layer provides reliable application-state recovery above this channel.
+
+The built terminal relies on SSP's silent-path revalidation on its existing
+socket. The channel's explicit `rebind` API is also exercised by component tests;
+the terminal does not expose a user-facing socket-replacement or server-migration
+command. These are separate levels of integration and should be reported as such.
 
 `start_close` begins an authenticated close, with a three-second client deadline.
 Calling it repeatedly does not extend the deadline. `ChannelEnd::peer_closed`

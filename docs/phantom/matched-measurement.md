@@ -7,7 +7,8 @@ is now included in the default branch as an explicit SSP build opt-in. Each
 pilot pins its actual source and binary hashes. The full campaign below has
 not been run, and none of these pilots establishes resistance to identification,
 activity inference or cross-flow linkage. Do not substitute control-probe traffic
-for terminals.
+for terminals. The [documentation index](README.md) distinguishes current guides
+from historical results.
 
 ## Reproduce the available validation
 
@@ -92,6 +93,11 @@ profiles, evidence kind and observation duration. Profiles must reference frozen
 campaign specifications, not vague labels. A comparison cannot mix builds or
 synthetic/real evidence. Extra fields, duplicate JSON keys, missing/unhealthy
 runs, unknown drops, out-of-window packets and reused session IDs are rejected.
+The fixed `phantom-draft-01` label is an evaluator implementation identifier,
+not the terminal wire profile. The integrated pilot uses terminal draft-02; its
+manifest, source and binary pins identify that fact. A new transport candidate
+needs a deliberate schema extension and new collection, not a reused label.
+
 Do not silently retry failed pairs until a favorable outcome appears: maintain
 a failure ledger with all attempted pairs and reasons, outside passive inputs.
 
@@ -108,9 +114,11 @@ are assertions, not proof of faithful collection or independent sessions.
 
 Paired summary differences are not classification accuracy or indistinguishability.
 No detector is trained, no threshold is selected, and there are no confidence
-intervals or automatic pass/fail privacy verdicts. The included loopback pilot is not the full terminal campaign. No background
-UDP corpus, independent replication or radio-energy measurement is included. Do not populate `evaluation/contract.json` measurements from the
-synthetic fixture or use this comparator as the full privacy evaluation.
+intervals or automatic pass/fail privacy verdicts. The included loopback pilots
+are not the full terminal campaign. No background UDP corpus, independent
+replication or radio-energy measurement is included. Do not populate
+`evaluation/contract.json` measurements from the synthetic fixture or descriptive
+pilots, or use this comparator as the full privacy evaluation.
 
 After collecting a valid pilot, perform the separate held-out detector experiment
 in [the evaluation guide](evaluation.md): realistic background sessions,

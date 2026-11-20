@@ -1,5 +1,8 @@
 # Startup and secret handoff
 
+[Documentation index](README.md) · [SSH supervisor](ssh-startup.md) ·
+[Current session offers](remote-session.md#address-bound-startup)
+
 The startup component provides a message codec and a POSIX descriptor reader for
 connecting the record layer to a launcher. It does not run SSH, authenticate a
 host or start a terminal. Existing Mosh executables are unchanged.
@@ -9,6 +12,12 @@ control and terminal executables use the distinct address-bound `PHANTOM SESSION
 offers in [remote-session.md](remote-session.md#address-bound-startup), selected
 through the [SSH supervisor](ssh-startup.md). The terminal selects application
 profile `phantom-mosh/terminal/draft-02`; it does not use this port-only offer.
+
+Use [`startup.h`](../../src/phantom/startup.h) and
+[`startup_posix.h`](../../src/phantom/startup_posix.h) for this component's API,
+and [`session_offer.h`](../../src/phantom/session_offer.h) for current application
+offers. The record profile's `v3` label is a Phantom protocol identifier, not
+an upstream Mosh version or an option accepted by the inherited `mosh` wrapper.
 
 ## Message format
 
@@ -85,6 +94,11 @@ Close/cancel the child and reject the offer when SSH fails, even when its stdout
 contained a syntactically valid message. Do not reuse the bootstrap after a
 failed or restarted session. These launcher responsibilities are not implemented
 by the codec or the descriptor reader.
+
+Do not persist a startup frame as a session-resume file. Loss/reordering and
+network-outage recovery belong to the live record/session owners. Neither
+startup codec reconstructs an interrupted process or safely restores counters
+from a saved offer.
 
 ## Tests
 
